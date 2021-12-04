@@ -202,7 +202,7 @@ class Identity:
     def _read_out(self, stream, process, result):
         data = b''
         while True:
-            c = stream.read(1)
+            c = stream.read1(100)
             if not c:
                 break
             data += c
@@ -214,7 +214,7 @@ class Identity:
         pwd_written = 0
         sep = os.linesep.encode('ascii')
         while True:
-            c = stream.read(1)
+            c = stream.read1(100)
             data += c
             # print('err: %s' % data)
             if data in (b'Password: ', b'Password: ' + sep + b'Password (one more time): '):
