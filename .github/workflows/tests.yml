@@ -26,6 +26,10 @@ jobs:
       uses: adnsio/setup-age-action@v1.1.0
       with:
         version: ^1.0.0
+    - name: Set up minisign (POSIX)
+      if: ${{ matrix.os != 'windows-latest' }}
+      run: |
+        brew install minisign
     - name: Set up age (Windows)
       if: ${{ matrix.os == 'windows-latest' }}
       run: |
