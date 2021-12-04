@@ -39,3 +39,4 @@ jobs:
       run: |
         age --version
         minisign -v
+        python test_pagesign.py
