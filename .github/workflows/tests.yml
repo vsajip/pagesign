@@ -21,10 +21,15 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Set up age
+    - name: Set up age (POSIX)
+      if: ${{ matrix.os != 'windows-latest' }}
       uses: adnsio/setup-age-action@v1.1.0
       with:
         version: ^1.0.0
+    - name: Set up age (Windows)
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: |
+        'choco install age.portable'
     - name: Test with unittest
       run: |
         age --version
