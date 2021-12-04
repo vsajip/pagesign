@@ -14,6 +14,8 @@ import sys
 import tempfile
 import threading
 
+__version__ = '0.1.0'
+
 if sys.version_info[:2] < (3, 6):
     raise ImportError('This module requires Python >= 3.6 to run.')
 

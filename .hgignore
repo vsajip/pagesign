@@ -1,2 +1,4 @@
 \.(pyc|pyo|log)
 __pycache__/
+(\.github|build|dist|.*egg-info)/
+^MANIFEST$

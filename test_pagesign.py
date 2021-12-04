@@ -82,6 +82,9 @@ def main():
     fn = os.path.basename(__file__)
     fn = os.path.splitext(fn)[0]
     lfn = os.path.expanduser('~/logs/%s.log' % fn)
+    d = os.path.dirname(lfn)
+    if not os.path.exists(d):
+        os.makedirs(d)
     if os.path.isdir(os.path.dirname(lfn)):
         logging.basicConfig(level=logging.DEBUG, filename=lfn, filemode='w',
                             format='%(message)s')
