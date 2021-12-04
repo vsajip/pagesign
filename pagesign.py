@@ -212,11 +212,12 @@ class Identity:
         data = b''
         pwd = (self.sign_pass + os.linesep).encode('ascii')
         pwd_written = 0
+        sep = os.linesep.encode('ascii')
         while True:
             c = stream.read(1)
             data += c
             # print('err: %s' % data)
-            if data in (b'Password: ', b'Password: \nPassword (one more time): '):
+            if data in (b'Password: ', b'Password: ' + sep + b'Password (one more time): '):
                 process.stdin.write(pwd)
                 process.stdin.flush()
                 pwd_written += 1
