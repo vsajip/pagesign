@@ -29,8 +29,7 @@ jobs:
     - name: Set up age (Windows)
       if: ${{ matrix.os == 'windows-latest' }}
       run: |
-        choco install age.portable --debug --verbose
+        choco install age.portable
     - name: Test with unittest
       run: |
-        echo $PATH
         age --version
