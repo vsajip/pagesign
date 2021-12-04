@@ -14,7 +14,9 @@ import sys
 import tempfile
 import threading
 
-__version__ = '0.1.0'
+__version__ = '0.1.0.dev0'
+__author__ = 'Vinay Sajip'
+__date__  = "$04-Dec-2021 21:23:47$"
 
 if sys.version_info[:2] < (3, 6):
     raise ImportError('This module requires Python >= 3.6 to run.')
@@ -32,7 +34,7 @@ __all__ = [
 ]
 
 if os.name == 'nt':
-    PAGESIGN_DIR = os.path.join(os.environ('LOCALAPPDATA'), '.pagesign')
+    PAGESIGN_DIR = os.path.join(os.environ('LOCALAPPDATA'), 'pagesign')
 else:
     PAGESIGN_DIR = os.path.expanduser('~/.pagesign')
 
