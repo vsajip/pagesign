@@ -34,7 +34,7 @@ __all__ = [
 ]
 
 if os.name == 'nt':
-    PAGESIGN_DIR = os.path.join(os.environ('LOCALAPPDATA'), 'pagesign')
+    PAGESIGN_DIR = os.path.join(os.environ['LOCALAPPDATA'], 'pagesign')
 else:
     PAGESIGN_DIR = os.path.expanduser('~/.pagesign')
 
