@@ -33,3 +33,4 @@ jobs:
     - name: Test with unittest
       run: |
         age --version
+        minisign -v
