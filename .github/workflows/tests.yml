@@ -34,6 +34,7 @@ jobs:
       if: ${{ matrix.os == 'windows-latest' }}
       run: |
         choco install age.portable
+        choco install minisign
     - name: Test with unittest
       run: |
         age --version
