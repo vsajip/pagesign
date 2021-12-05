@@ -3,12 +3,13 @@
 # Copyright (C) 2021 Red Dove Consultants Limited
 #
 import base64
+import functools
 import json
 import logging
 import os
 import re
 import shutil
-import stat
+# import stat
 import subprocess
 import sys
 import tempfile
@@ -16,7 +17,7 @@ import threading
 
 __version__ = '0.1.0.dev0'
 __author__ = 'Vinay Sajip'
-__date__  = "$04-Dec-2021 21:23:47$"
+__date__ = "$04-Dec-2021 21:23:47$"
 
 if sys.version_info[:2] < (3, 6):
     raise ImportError('This module requires Python >= 3.6 to run.')
@@ -25,8 +26,9 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     'Identity',
-    'KEYS',
-    'clear_keys',
+    'remove_identities',
+    'clear_identities',
+    'list_identities',
     'encrypt',
     'decrypt',
     'sign',
@@ -42,7 +44,6 @@ CREATED_PATTERN = re.compile('# created: (.*)', re.I)
 APK_PATTERN = re.compile('# public key: (.*)', re.I)
 ASK_PATTERN = re.compile(r'AGE-SECRET-KEY-.*')
 MPI_PATTERN = re.compile(r'minisign public key (\S+)')
-MSI_PATTERN = re.compile(r'minisign encrypted secret key')
 
 if not os.path.exists(PAGESIGN_DIR):
     os.makedirs(PAGESIGN_DIR)
@@ -52,7 +53,8 @@ if not os.path.isdir(PAGESIGN_DIR):
 
 os.chmod(PAGESIGN_DIR, 0o700)
 
-def load_keys():
+
+def _load_keys():
     result = {}
     p = os.path.join(PAGESIGN_DIR, 'keys')
     if os.path.exists(p):
@@ -61,29 +63,93 @@ def load_keys():
     return result
 
 
-def save_keys(keys):
+def _save_keys(keys):
     p = os.path.join(PAGESIGN_DIR, 'keys')
     with open(p, 'w', encoding='utf-8') as f:
         json.dump(keys, f, indent=2, sort_keys=True)
     os.chmod(p, 0o600)
 
 
-KEYS = load_keys()
+KEYS = _load_keys()
 
 PUBLIC_ATTRS = ('created', 'crypt_public', 'sign_public', 'sign_id')
 
 ATTRS = PUBLIC_ATTRS + ('crypt_secret', 'sign_secret', 'sign_pass')
 
-def clear_keys(keys=KEYS):
-    keys.clear()
+
+def clear_identities(keys=KEYS):
+    if len(keys):
+        keys.clear()
+        _save_keys(keys)
+
+
+def remove_identities(*args):
+    changed = False
+    for name in args:
+        if name in KEYS:
+            del KEYS[name]
+            changed = True
+    if changed:
+        _save_keys(KEYS)
+
+
+def list_identities():
+    return KEYS.items()
 
 
 def _make_password(length):
     return base64.b64encode(os.urandom(length)).decode('ascii')
 
 
-def run_command(cmd, wd, ident=None):
-    # print('Running: %s' % (cmd if isinstance(cmd, str) else ' '.join(cmd)))
+def _read_out(stream, result):
+    data = b''
+    while True:
+        c = stream.read1(100)
+        if not c:
+            break
+        data += c
+    result['stdout'] = data
+
+
+def _read_age_encrypt_err(passphrase, stream, stdin, result):
+    data = b''
+    pwd = (passphrase + os.linesep).encode('ascii')
+    pwd_written = 0
+    sep = os.linesep.encode('ascii')
+    prompt1 = b'Enter passphrase (leave empty to autogenerate a secure one): '
+    prompt2 = prompt1 + sep + b'Confirm passphrase: '
+    prompts = (prompt1, prompt2)
+    while True:
+        c = stream.read1(100)
+        data += c
+        # print('err: %s' % data)
+        if data in prompts:
+            stdin.write(pwd)
+            stdin.flush()
+            pwd_written += 1
+            if pwd_written == 2:
+                stdin.close()
+                break
+    result['stderr'] = data
+
+
+def _read_age_decrypt_err(passphrase, stream, stdin, result):
+    data = b''
+    pwd = (passphrase + os.linesep).encode('ascii')
+    while True:
+        c = stream.read1(100)
+        data += c
+        # print('err: %s' % data)
+        if data == b'Enter passphrase: ':
+            stdin.write(pwd)
+            stdin.flush()
+            stdin.close()
+            break
+    result['stderr'] = data
+
+
+def _run_command(cmd, wd, err_reader=None):
+    print('Running: %s' % (cmd if isinstance(cmd, str) else ' '.join(cmd)))
     # if cmd[0] == 'age': import pdb; pdb.set_trace()
     if not isinstance(cmd, list):
         cmd = cmd.split()
@@ -93,23 +159,18 @@ def run_command(cmd, wd, ident=None):
         'stdout': subprocess.PIPE,
         'stderr': subprocess.PIPE
     }
-    if ident:
+    if err_reader:
         kwargs['stdin'] = subprocess.PIPE
     p = subprocess.Popen(cmd, **kwargs)
-    if ident is None:
+    if err_reader is None:
         stdout, stderr = p.communicate()
     else:
         data = {}
-        rout = threading.Thread(target=ident._read_out, args=(p.stdout, p, data))
+        rout = threading.Thread(target=_read_out, args=(p.stdout, data))
         rout.daemon = True
         rout.start()
-        if cmd[0] == 'minisign':
-            if cmd[1] == '-fG':
-                target = ident._read_minisign_gen_err
-            else:
-                target = ident._read_minisign_sign_err
 
-        rerr = threading.Thread(target=target, args=(p.stderr, p, data))
+        rerr = threading.Thread(target=err_reader, args=(p.stderr, p.stdin, data))
         rerr.daemon = True
         rerr.start()
 
@@ -127,7 +188,7 @@ def run_command(cmd, wd, ident=None):
     if p.returncode == 0:
         return stdout.decode('utf-8'), stderr.decode('utf-8')
     else:
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         if False:
             print('Command %r failed with return code %d' % (cmd[0], p.returncode))
             print('stdout was:')
@@ -156,7 +217,7 @@ class Identity:
             wd = tempfile.mkdtemp(dir=PAGESIGN_DIR, prefix='work-')
             p = os.path.join(wd, 'age-key')
             cmd = 'age-keygen -o %s' % p
-            run_command(cmd, wd)
+            _run_command(cmd, wd)
             with open(p, encoding=self.encoding) as f:
                 lines = f.read().splitlines()
             for line in lines:
@@ -177,7 +238,7 @@ class Identity:
             os.close(fd)
             self.sign_pass = _make_password(12)
             cmd = 'minisign -fG -p %s -s %s' % (pfn, sfn)
-            run_command(cmd, wd, self)
+            _run_command(cmd, wd, self._read_minisign_gen_err)
             with open(pfn, encoding=self.encoding) as f:
                 lines = f.read().splitlines()
                 for line in lines:
@@ -197,37 +258,31 @@ class Identity:
         d = dict(self.__dict__)
         # might need to remove some attrs from d here ...
         KEYS[name] = d
-        save_keys(KEYS)
+        _save_keys(KEYS)
 
-    def _read_out(self, stream, process, result):
-        data = b''
-        while True:
-            c = stream.read1(100)
-            if not c:
-                break
-            data += c
-        result['stdout'] = data
-
-    def _read_minisign_gen_err(self, stream, process, result):
+    def _read_minisign_gen_err(self, stream, stdin, result):
         data = b''
         pwd = (self.sign_pass + os.linesep).encode('ascii')
         pwd_written = 0
         sep = os.linesep.encode('ascii')
+        prompt1 = b'Password: '
+        prompt2 = prompt1 + sep + b'Password (one more time): '
+        prompts = (prompt1, prompt2)
         while True:
             c = stream.read1(100)
             data += c
             # print('err: %s' % data)
-            if data in (b'Password: ', b'Password: ' + sep + b'Password (one more time): '):
-                process.stdin.write(pwd)
-                process.stdin.flush()
+            if data in prompts:
+                stdin.write(pwd)
+                stdin.flush()
                 pwd_written += 1
                 # print('Wrote pwd')
                 if pwd_written == 2:
-                    process.stdin.close()
+                    stdin.close()
                     break
         result['stderr'] = data
 
-    def _read_minisign_sign_err(self, stream, process, result):
+    def _read_minisign_sign_err(self, stream, stdin, result):
         data = b''
         pwd = (self.sign_pass + os.linesep).encode('ascii')
         while True:
@@ -235,9 +290,8 @@ class Identity:
             data += c
             # print('err: %s' % data)
             if data == b'Password: ':
-                process.stdin.write(pwd)
-                # process.stdin.flush()
-                process.stdin.close()
+                stdin.write(pwd)
+                stdin.close()
                 break
         result['stderr'] = data
 
@@ -261,6 +315,8 @@ class Identity:
 
 
 def encrypt(path, outpath=None, armor=True, recipients=None, passphrase=None):
+    if passphrase is not None:
+        passphrase = passphrase.strip()
     if not recipients and not passphrase:
         raise ValueError('Either recipients or a passphrase need to be specified.')
     if recipients and passphrase:
@@ -281,7 +337,6 @@ def encrypt(path, outpath=None, armor=True, recipients=None, passphrase=None):
     if armor:
         cmd.append('-a')
     if passphrase:
-        raise NotImplementedError('Passphrase not yet implemented')
         cmd.append('-p')
     else:
         if isinstance(recipients, str):
@@ -295,19 +350,28 @@ def encrypt(path, outpath=None, armor=True, recipients=None, passphrase=None):
             cmd.extend(['-r', info['crypt_public']])
     cmd.extend(['-o', outpath])
     cmd.append(path)
-    run_command(cmd, os.getcwd())
+    if not passphrase:
+        err_reader = None
+    else:
+        err_reader = functools.partial(_read_age_encrypt_err, passphrase)
+    _run_command(cmd, os.getcwd(), err_reader)
     return outpath
 
 
-def decrypt(path, outpath=None, identities=None):
-    if not identities:
-        raise ValueError('At least one identity must be specified.')
+def decrypt(path, outpath=None, identities=None, passphrase=None):
+    if passphrase is not None:
+        passphrase = passphrase.strip()
+    if not identities and not passphrase:
+        raise ValueError('Either identities or a passphrase need to be specified.')
+    if identities and passphrase:
+        raise ValueError('Both identities and a passphrase should not be specified.')
     if not os.path.isfile(path):
         raise ValueError('No such file: %s' % path)
     if outpath is None:
         if path.endswith('.age'):
             outpath = path[:-4]
         else:
+            outpath = '%s.dec' % path
             NotImplementedError('No outpath specified and input does not end with .age')
     else:
         d = os.path.dirname(outpath)
@@ -318,14 +382,15 @@ def decrypt(path, outpath=None, identities=None):
         # if dir, assume writeable, for now
 
     cmd = ['age', '-d']
-    if isinstance(identities, str):
-        identities = [identities]
-    if not isinstance(identities, (list, tuple)):
-        raise ValueError('invalid identities: %s' % identities)
-    fd, fn = tempfile.mkstemp(dir=PAGESIGN_DIR, prefix='ident-')
-    os.close(fd)
-    # import pdb; pdb.set_trace()
-    try:
+    if passphrase:
+        cmd.append('-p')
+    else:
+        if isinstance(identities, str):
+            identities = [identities]
+        if not isinstance(identities, (list, tuple)):
+            raise ValueError('invalid identities: %s' % identities)
+        fd, fn = tempfile.mkstemp(dir=PAGESIGN_DIR, prefix='ident-')
+        os.close(fd)
         ident_values = []
         for ident in identities:
             if ident not in KEYS:
@@ -334,9 +399,15 @@ def decrypt(path, outpath=None, identities=None):
         with open(fn, 'w', encoding='utf-8') as f:
             f.write('\n'.join(ident_values))
         cmd.extend(['-i', fn])
+    # import pdb; pdb.set_trace()
+    try:
         cmd.extend(['-o', outpath])
         cmd.append(path)
-        run_command(cmd, os.getcwd())
+        if not passphrase:
+            err_reader = None
+        else:
+            err_reader = functools.partial(_read_age_decrypt_err, passphrase)
+        _run_command(cmd, os.getcwd(), err_reader)
         return outpath
     finally:
         os.remove(fn)
@@ -365,7 +436,7 @@ def sign(path, identity, outpath=None):
     os.close(fd)
     try:
         cmd = ['minisign', '-S', '-x', outpath, '-s', fn, '-m', path]
-        run_command(cmd, os.getcwd(), ident)
+        _run_command(cmd, os.getcwd(), ident._read_minisign_sign_err)
     finally:
         os.remove(fn)
     return outpath
@@ -385,4 +456,4 @@ def verify(path, identity, sigpath=None):
         raise ValueError('No such file: %s' % sigpath)
     cmd = ['minisign', '-V', '-x', sigpath, '-P', ident.sign_public, '-m', path]
     # import pdb; pdb.set_trace()
-    run_command(cmd, os.getcwd())
+    _run_command(cmd, os.getcwd())

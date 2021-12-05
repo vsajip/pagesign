@@ -9,7 +9,8 @@ import sys
 import tempfile
 import unittest
 
-from pagesign import Identity, encrypt, decrypt, sign, verify
+from pagesign import (Identity, encrypt, decrypt, sign, verify,
+                      remove_identities, clear_identities, list_identities)
 
 DEBUGGING = 'PY_DEBUG' in os.environ
 
@@ -31,12 +32,26 @@ class BaseTest(unittest.TestCase):
 
 
 class BasicTest(BaseTest):
-    def test_creation(self):
+    def ztest_creation(self):
         for name in ('foo', 'bar'):
             identity = Identity()
             identity.save(name)
 
-    def test_export(self):
+    def ztest_clearing_listing_and_removal(self):
+        clear_identities()
+        d = dict(list_identities())
+        self.assertEqual(len(d), 0)
+        names = {'bob', 'carol', 'ted', 'alice'}
+        for name in names:
+            identity = Identity()
+            identity.save(name)
+        d = dict(list_identities())
+        self.assertEqual(set(d), names)
+        remove_identities('bob', 'alice')
+        d = dict(list_identities())
+        self.assertEqual(set(d), {'ted', 'carol'})
+
+    def ztest_export(self):
         for name in ('foo', 'bar'):
             identity = Identity()
             identity.save(name)
@@ -45,14 +60,14 @@ class BasicTest(BaseTest):
                 self.assertNotIn('_secret', k)
                 self.assertNotIn('_pass', k)
 
-    def test_import(self):
+    def ztest_import(self):
         identity = Identity()
         identity.save('foo')
         exported = identity.export()
         imported = Identity.imported(exported, 'bar')
         self.assertEqual(exported, imported.export())
 
-    def test_encryption_and_signing(self):
+    def ztest_encryption_and_signing(self):
         identity = Identity()
         identity.save('alice')
         identity = Identity()
@@ -73,7 +88,24 @@ class BasicTest(BaseTest):
         os.close(fd)
         self.addCleanup(os.remove, fn)
         decrypted = decrypt(encrypted, outpath=fn, identities='bob')
-        with open(fn, 'rb') as f:
+        with open(decrypted, 'rb') as f:
+            ddata = f.read()
+        self.assertEqual(data, ddata)
+
+    def test_encryption_passphrase(self):
+        fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
+        self.addCleanup(os.remove, fn)
+        data = b'Hello, world!'
+        os.write(fd, data)
+        os.close(fd)
+        passphrase = 'correct-horse-battery-staple'
+        encrypted = encrypt(fn, passphrase=passphrase)
+        self.addCleanup(os.remove, encrypted)
+        fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
+        os.close(fd)
+        self.addCleanup(os.remove, fn)
+        decrypted = decrypt(encrypted, outpath=fn, passphrase=passphrase)
+        with open(decrypted, 'rb') as f:
             ddata = f.read()
         self.assertEqual(data, ddata)
 
