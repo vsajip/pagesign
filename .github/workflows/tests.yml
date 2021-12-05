@@ -8,6 +8,8 @@ on:
       - 'README.*'
       - '.github/ISSUE-TEMPLATE/**'
       - 'docs/**'
+      - '.hgignore'
+      - '.gitignore'
 
   pull_request:
     branches: [ main ]
@@ -16,6 +18,8 @@ on:
       - 'README.*'
       - '.github/ISSUE-TEMPLATE/**'
       - 'docs/**'
+      - '.hgignore'
+      - '.gitignore'
 
 jobs:
   build:
