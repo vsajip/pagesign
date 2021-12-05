@@ -15,9 +15,9 @@ import sys
 import tempfile
 import threading
 
-__version__ = '0.1.0.dev0'
+__version__ = '0.1.0'
 __author__ = 'Vinay Sajip'
-__date__ = "$04-Dec-2021 21:23:47$"
+__date__ = "$05-Dec-2021 12:39:53$"
 
 if sys.version_info[:2] < (3, 6):
     raise ImportError('This module requires Python >= 3.6 to run.')
