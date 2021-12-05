@@ -28,8 +28,8 @@ class BaseTest(unittest.TestCase):
 
     def tearDown(self):
         ident = self.id().rsplit('.', 1)[-1]
-        logger.debug('%s finished.', ident)
         logger.debug(self.SEP)
+        logger.debug('%s finished.', ident)
 
 
 class BasicTest(BaseTest):

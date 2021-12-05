@@ -1,4 +1,4 @@
 \.(pyc|pyo|log)
 __pycache__/
-(docs|build|dist|.*egg-info)/
+(build|dist|.*egg-info)/
 ^MANIFEST$

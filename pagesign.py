@@ -447,12 +447,12 @@ def encrypt_and_sign(path, recipients, signer, armor=True, outpath=None, sigpath
     sigpath = sign(outpath, signer, outpath=sigpath)
     return outpath, sigpath
 
-def verify_and_decrypt(path, recipients, identity, outpath=None, sigpath=None):
-    if not identity or not recipients:
+def verify_and_decrypt(path, recipients, signer, outpath=None, sigpath=None):
+    if not signer or not recipients:
         raise ValueError('At least one recipient and one signer needs to be specified.')
     if not os.path.isfile(path):
         raise ValueError('No such file: %s' % path)
     if sigpath is None:
         sigpath = path + '.sig'
-    verify(path, identity, sigpath)
+    verify(path, signer, sigpath)
     return decrypt(path, recipients, outpath)

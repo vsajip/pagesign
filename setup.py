@@ -31,7 +31,7 @@ The archives should be the same as those uploaded to PyPI.
     platforms="No particular restrictions",
     download_url="https://pypi.io/packages/source/p/pagesign/pagesign-%s.tar.gz" % version,
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 3 - Alpha',
         "Intended Audience :: Developers",
         'License :: OSI Approved :: BSD License',
         "Programming Language :: Python",
