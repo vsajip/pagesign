@@ -32,7 +32,9 @@ __all__ = [
     'encrypt',
     'decrypt',
     'sign',
-    'verify'
+    'verify',
+    'encrypt_and_sign',
+    'verify_and_decrypt'
 ]
 
 if os.name == 'nt':
@@ -149,7 +151,7 @@ def _read_age_decrypt_err(passphrase, stream, stdin, result):
 
 
 def _run_command(cmd, wd, err_reader=None):
-    print('Running: %s' % (cmd if isinstance(cmd, str) else ' '.join(cmd)))
+    # print('Running: %s' % (cmd if isinstance(cmd, str) else ' '.join(cmd)))
     # if cmd[0] == 'age': import pdb; pdb.set_trace()
     if not isinstance(cmd, list):
         cmd = cmd.split()
@@ -314,13 +316,9 @@ class Identity:
         return result
 
 
-def encrypt(path, outpath=None, armor=True, recipients=None, passphrase=None):
-    if passphrase is not None:
-        passphrase = passphrase.strip()
-    if not recipients and not passphrase:
-        raise ValueError('Either recipients or a passphrase need to be specified.')
-    if recipients and passphrase:
-        raise ValueError('Both recipients and a passphrase should not be specified.')
+def encrypt(path, recipients, outpath=None, armor=True):
+    if not recipients:
+        raise ValueError('At least one recipient needs to be specified.')
     if not os.path.isfile(path):
         raise ValueError('No such file: %s' % path)
     if outpath is None:
@@ -336,35 +334,24 @@ def encrypt(path, outpath=None, armor=True, recipients=None, passphrase=None):
     cmd = ['age', '-e']
     if armor:
         cmd.append('-a')
-    if passphrase:
-        cmd.append('-p')
-    else:
-        if isinstance(recipients, str):
-            recipients = [recipients]
-        if not isinstance(recipients, (list, tuple)):
-            raise ValueError('invalid recipients: %s' % recipients)
-        for r in recipients:
-            if r not in KEYS:
-                raise ValueError('No such recipient: %s' % r)
-            info = KEYS[r]
-            cmd.extend(['-r', info['crypt_public']])
+    if isinstance(recipients, str):
+        recipients = [recipients]
+    if not isinstance(recipients, (list, tuple)):
+        raise ValueError('invalid recipients: %s' % recipients)
+    for r in recipients:
+        if r not in KEYS:
+            raise ValueError('No such recipient: %s' % r)
+        info = KEYS[r]
+        cmd.extend(['-r', info['crypt_public']])
     cmd.extend(['-o', outpath])
     cmd.append(path)
-    if not passphrase:
-        err_reader = None
-    else:
-        err_reader = functools.partial(_read_age_encrypt_err, passphrase)
-    _run_command(cmd, os.getcwd(), err_reader)
+    _run_command(cmd, os.getcwd())
     return outpath
 
 
-def decrypt(path, outpath=None, identities=None, passphrase=None):
-    if passphrase is not None:
-        passphrase = passphrase.strip()
-    if not identities and not passphrase:
-        raise ValueError('Either identities or a passphrase need to be specified.')
-    if identities and passphrase:
-        raise ValueError('Both identities and a passphrase should not be specified.')
+def decrypt(path, identities, outpath=None):
+    if not identities:
+        raise ValueError('At least one identity needs to be specified.')
     if not os.path.isfile(path):
         raise ValueError('No such file: %s' % path)
     if outpath is None:
@@ -372,7 +359,6 @@ def decrypt(path, outpath=None, identities=None, passphrase=None):
             outpath = path[:-4]
         else:
             outpath = '%s.dec' % path
-            NotImplementedError('No outpath specified and input does not end with .age')
     else:
         d = os.path.dirname(outpath)
         if not os.path.exists(d):
@@ -382,32 +368,25 @@ def decrypt(path, outpath=None, identities=None, passphrase=None):
         # if dir, assume writeable, for now
 
     cmd = ['age', '-d']
-    if passphrase:
-        cmd.append('-p')
-    else:
-        if isinstance(identities, str):
-            identities = [identities]
-        if not isinstance(identities, (list, tuple)):
-            raise ValueError('invalid identities: %s' % identities)
-        fd, fn = tempfile.mkstemp(dir=PAGESIGN_DIR, prefix='ident-')
-        os.close(fd)
-        ident_values = []
-        for ident in identities:
-            if ident not in KEYS:
-                raise ValueError('No such identity: %s' % ident)
-            ident_values.append(KEYS[ident]['crypt_secret'])
-        with open(fn, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(ident_values))
-        cmd.extend(['-i', fn])
+    if isinstance(identities, str):
+        identities = [identities]
+    if not isinstance(identities, (list, tuple)):
+        raise ValueError('invalid identities: %s' % identities)
+    fd, fn = tempfile.mkstemp(dir=PAGESIGN_DIR, prefix='ident-')
+    os.close(fd)
+    ident_values = []
+    for ident in identities:
+        if ident not in KEYS:
+            raise ValueError('No such identity: %s' % ident)
+        ident_values.append(KEYS[ident]['crypt_secret'])
+    with open(fn, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(ident_values))
+    cmd.extend(['-i', fn])
     # import pdb; pdb.set_trace()
     try:
         cmd.extend(['-o', outpath])
         cmd.append(path)
-        if not passphrase:
-            err_reader = None
-        else:
-            err_reader = functools.partial(_read_age_decrypt_err, passphrase)
-        _run_command(cmd, os.getcwd(), err_reader)
+        _run_command(cmd, os.getcwd())
         return outpath
     finally:
         os.remove(fn)
@@ -457,3 +436,23 @@ def verify(path, identity, sigpath=None):
     cmd = ['minisign', '-V', '-x', sigpath, '-P', ident.sign_public, '-m', path]
     # import pdb; pdb.set_trace()
     _run_command(cmd, os.getcwd())
+
+
+def encrypt_and_sign(path, recipients, signer, armor=True, outpath=None, sigpath=None):
+    if not recipients or not signer:
+        raise ValueError('At least one recipient and one signer needs to be specified.')
+    if not os.path.isfile(path):
+        raise ValueError('No such file: %s' % path)
+    outpath = encrypt(path, recipients, outpath=outpath, armor=armor)
+    sigpath = sign(outpath, signer, outpath=sigpath)
+    return outpath, sigpath
+
+def verify_and_decrypt(path, recipients, identity, outpath=None, sigpath=None):
+    if not identity or not recipients:
+        raise ValueError('At least one recipient and one signer needs to be specified.')
+    if not os.path.isfile(path):
+        raise ValueError('No such file: %s' % path)
+    if sigpath is None:
+        sigpath = path + '.sig'
+    verify(path, identity, sigpath)
+    return decrypt(path, recipients, outpath)

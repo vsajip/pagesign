@@ -10,6 +10,7 @@ import tempfile
 import unittest
 
 from pagesign import (Identity, encrypt, decrypt, sign, verify,
+                      encrypt_and_sign, verify_and_decrypt,
                       remove_identities, clear_identities, list_identities)
 
 DEBUGGING = 'PY_DEBUG' in os.environ
@@ -32,7 +33,7 @@ class BaseTest(unittest.TestCase):
 
 
 class BasicTest(BaseTest):
-    def ztest_clearing_creating_listing_and_removal(self):
+    def test_clearing_creating_listing_and_removal(self):
         clear_identities()
         d = dict(list_identities())
         self.assertEqual(len(d), 0)
@@ -46,7 +47,7 @@ class BasicTest(BaseTest):
         d = dict(list_identities())
         self.assertEqual(set(d), {'ted', 'carol'})
 
-    def ztest_export(self):
+    def test_export(self):
         for name in ('foo', 'bar'):
             identity = Identity()
             identity.save(name)
@@ -55,14 +56,14 @@ class BasicTest(BaseTest):
                 self.assertNotIn('_secret', k)
                 self.assertNotIn('_pass', k)
 
-    def ztest_import(self):
+    def test_import(self):
         identity = Identity()
         identity.save('foo')
         exported = identity.export()
         imported = Identity.imported(exported, 'bar')
         self.assertEqual(exported, imported.export())
 
-    def ztest_encryption_and_signing(self):
+    def test_encryption_and_signing_separately(self):
         identity = Identity()
         identity.save('alice')
         identity = Identity()
@@ -83,6 +84,44 @@ class BasicTest(BaseTest):
         os.close(fd)
         self.addCleanup(os.remove, fn)
         decrypted = decrypt(encrypted, outpath=fn, identities='bob')
+        with open(decrypted, 'rb') as f:
+            ddata = f.read()
+        self.assertEqual(data, ddata)
+
+    def test_encryption_and_signing_together(self):
+        identity = Identity()
+        identity.save('alice')
+        identity = Identity()
+        identity.save('bob')
+        fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
+        self.addCleanup(os.remove, fn)
+        data = b'Hello, world!'
+        os.write(fd, data)
+        os.close(fd)
+        outpath, sigpath = encrypt_and_sign(fn, 'bob', 'alice')
+        self.assertEqual(outpath, fn + '.age')
+        self.assertEqual(sigpath, outpath + '.sig')
+        self.addCleanup(os.remove, outpath)
+        self.addCleanup(os.remove, sigpath)
+        verify(outpath, 'alice', sigpath)
+
+    def test_verifying_and_decrypting_together(self):
+        identity = Identity()
+        identity.save('alice')
+        identity = Identity()
+        identity.save('bob')
+        fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
+        self.addCleanup(os.remove, fn)
+        data = b'Hello, world!'
+        os.write(fd, data)
+        os.close(fd)
+        outpath, sigpath = encrypt_and_sign(fn, 'bob', 'alice')
+        self.addCleanup(os.remove, outpath)
+        self.addCleanup(os.remove, sigpath)
+        fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
+        os.close(fd)
+        self.addCleanup(os.remove, fn)
+        decrypted = verify_and_decrypt(outpath, 'bob', 'alice', fn, sigpath)
         with open(decrypted, 'rb') as f:
             ddata = f.read()
         self.assertEqual(data, ddata)

@@ -3,8 +3,19 @@ name: Tests
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'LICENSE.*'
+      - 'README.*'
+      - '.github/ISSUE-TEMPLATE/**'
+      - 'docs/**'
+
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - 'LICENSE.*'
+      - 'README.*'
+      - '.github/ISSUE-TEMPLATE/**'
+      - 'docs/**'
 
 jobs:
   build:
