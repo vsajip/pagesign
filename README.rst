@@ -49,6 +49,6 @@ Change log
 0.1.0
 -----
 
-Released: not yet.
+Released: 2021-12-05
 
 * Initial release.

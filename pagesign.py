@@ -15,7 +15,7 @@ import sys
 import tempfile
 import threading
 
-__version__ = '0.1.0'
+__version__ = '0.1.1.dev0'
 __author__ = 'Vinay Sajip'
 __date__ = "$05-Dec-2021 12:39:53$"
 
