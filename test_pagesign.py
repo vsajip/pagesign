@@ -32,12 +32,7 @@ class BaseTest(unittest.TestCase):
 
 
 class BasicTest(BaseTest):
-    def ztest_creation(self):
-        for name in ('foo', 'bar'):
-            identity = Identity()
-            identity.save(name)
-
-    def ztest_clearing_listing_and_removal(self):
+    def ztest_clearing_creating_listing_and_removal(self):
         clear_identities()
         d = dict(list_identities())
         self.assertEqual(len(d), 0)
@@ -92,7 +87,7 @@ class BasicTest(BaseTest):
             ddata = f.read()
         self.assertEqual(data, ddata)
 
-    def test_encryption_passphrase(self):
+    def ztest_encryption_passphrase(self):
         fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
         self.addCleanup(os.remove, fn)
         data = b'Hello, world!'
