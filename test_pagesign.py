@@ -3,8 +3,10 @@
 #
 # Copyright (C) 2021 Red Dove Consultants Limited. MIT Licensed.
 #
+import json
 import logging
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -154,8 +156,24 @@ def main():
     if os.path.isdir(os.path.dirname(lfn)):
         logging.basicConfig(level=logging.DEBUG, filename=lfn, filemode='w',
                             format='%(message)s')
-    unittest.main()
-
+    # Is there an existing store?
+    from pagesign import PAGESIGN_DIR
+    existing = os.path.join(PAGESIGN_DIR, 'keys')
+    if not os.path.exists(existing):
+        preserved = backup = None
+    else:
+        with open(existing, encoding='utf-8') as f:
+            preserved = json.load(f)
+        backup = existing + '.bak'
+        shutil.copy(existing, backup)
+    try:
+        unittest.main()
+    finally:
+        if preserved:
+            shutil.copy(backup, existing)
+            # with open(existing, 'w', encoding='utf-8') as f:
+                # json.dump(preserved, indent=2, sort_keys=True)
+            os.remove(backup)
 
 if __name__ == '__main__':
     try:
