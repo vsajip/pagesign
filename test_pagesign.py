@@ -70,63 +70,66 @@ class BasicTest(BaseTest):
         identity.save('alice')
         identity = Identity()
         identity.save('bob')
-        fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
-        self.addCleanup(os.remove, fn)
-        data = b'Hello, world!'
-        os.write(fd, data)
-        os.close(fd)
-        encrypted = encrypt(fn, recipients='bob')
-        self.addCleanup(os.remove, encrypted)
-        # Now sign it
-        signed = sign(encrypted, 'alice')
-        self.addCleanup(os.remove, signed)
-        # Now verify it
-        verify(encrypted, 'alice', signed)
-        fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
-        os.close(fd)
-        self.addCleanup(os.remove, fn)
-        decrypted = decrypt(encrypted, outpath=fn, identities='bob')
-        with open(decrypted, 'rb') as f:
-            ddata = f.read()
-        self.assertEqual(data, ddata)
+        for armor in (False, True):
+            fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
+            self.addCleanup(os.remove, fn)
+            data = b'Hello, world!'
+            os.write(fd, data)
+            os.close(fd)
+            encrypted = encrypt(fn, recipients='bob', armor=armor)
+            self.addCleanup(os.remove, encrypted)
+            # Now sign it
+            signed = sign(encrypted, 'alice')
+            self.addCleanup(os.remove, signed)
+            # Now verify it
+            verify(encrypted, 'alice', signed)
+            fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
+            os.close(fd)
+            self.addCleanup(os.remove, fn)
+            decrypted = decrypt(encrypted, outpath=fn, identities='bob')
+            with open(decrypted, 'rb') as f:
+                ddata = f.read()
+            self.assertEqual(data, ddata)
 
     def test_encryption_and_signing_together(self):
         identity = Identity()
         identity.save('alice')
         identity = Identity()
         identity.save('bob')
-        fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
-        self.addCleanup(os.remove, fn)
-        data = b'Hello, world!'
-        os.write(fd, data)
-        os.close(fd)
-        outpath, sigpath = encrypt_and_sign(fn, 'bob', 'alice')
-        self.assertEqual(outpath, fn + '.age')
-        self.assertEqual(sigpath, outpath + '.sig')
-        self.addCleanup(os.remove, outpath)
-        self.addCleanup(os.remove, sigpath)
-        verify(outpath, 'alice', sigpath)
+        for armor in (False, True):
+            fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
+            self.addCleanup(os.remove, fn)
+            data = b'Hello, world!'
+            os.write(fd, data)
+            os.close(fd)
+            outpath, sigpath = encrypt_and_sign(fn, 'bob', 'alice', armor=armor)
+            self.assertEqual(outpath, fn + '.age')
+            self.assertEqual(sigpath, outpath + '.sig')
+            self.addCleanup(os.remove, outpath)
+            self.addCleanup(os.remove, sigpath)
+            verify(outpath, 'alice', sigpath)
 
     def test_verifying_and_decrypting_together(self):
         identity = Identity()
         identity.save('alice')
         identity = Identity()
         identity.save('bob')
-        fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
-        self.addCleanup(os.remove, fn)
-        data = b'Hello, world!'
-        os.write(fd, data)
-        os.close(fd)
-        outpath, sigpath = encrypt_and_sign(fn, 'bob', 'alice')
-        self.addCleanup(os.remove, outpath)
-        self.addCleanup(os.remove, sigpath)
-        fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
-        os.close(fd)
-        self.addCleanup(os.remove, fn)
-        decrypted = verify_and_decrypt(outpath, 'bob', 'alice', fn, sigpath)
-        with open(decrypted, 'rb') as f:
-            ddata = f.read()
-        self.assertEqual(data, ddata)
+        for armor in (False, True):
+            fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
+            self.addCleanup(os.remove, fn)
+            data = b'Hello, world!'
+            os.write(fd, data)
+            os.close(fd)
+            outpath, sigpath = encrypt_and_sign(fn, 'bob', 'alice', armor=armor)
+            self.addCleanup(os.remove, outpath)
+            self.addCleanup(os.remove, sigpath)
+            fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
+            os.close(fd)
+            self.addCleanup(os.remove, fn)
+            decrypted = verify_and_decrypt(outpath, 'bob', 'alice', fn, sigpath)
+            with open(decrypted, 'rb') as f:
+                ddata = f.read()
+            self.assertEqual(data, ddata)
 
     def ztest_encryption_passphrase(self):
         fd, fn = tempfile.mkstemp(prefix='test-pagesign-')

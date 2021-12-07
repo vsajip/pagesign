@@ -138,9 +138,6 @@ table illustrates what they're for.
     .generic-table th {
       background-color: rgb(224, 224, 224);
     }
-    , *:focus, :hover {
-      outline: none;
-    }
     </style>
 
 Generating identities
@@ -346,7 +343,7 @@ Encryption
 
 To encrypt a message, use the `encrypt` function:
 
-.. function:: encrypt(path: str, recipients: Union[str, list[str]], outpath: Optional[str] = None, armor: bool = True) -> str
+.. function:: encrypt(path: str, recipients: Union[str, list[str]], outpath: Optional[str] = None, armor: bool = False) -> str
 
    Encrypt a file at `path` to `outpath`. If `outpath` isn't specified, the value of
    `path` with `'.age'` appended is used. If `armor` is `True`, the output file is PEM
@@ -425,7 +422,7 @@ Using signing and encryption together
 
 If you want to use signing and encryption together, use `encrypt_and_sign()`:
 
-.. function:: encrypt_and_sign(path: str, recipients: Union[str, list[str]], signer: str, armor: bool = True, outpath: Optional[str] = None, sigpath: Optional[str] = None) -> [str, str]
+.. function:: encrypt_and_sign(path: str, recipients: Union[str, list[str]], signer: str, armor: bool = False, outpath: Optional[str] = None, sigpath: Optional[str] = None) -> [str, str]
 
    Encrypt and sign the file at `path` for `recipients` and sign with identity
    `signer`. Place the encrypted output at `outpath` and the signature in `sigpath`.

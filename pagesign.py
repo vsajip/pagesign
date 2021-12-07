@@ -316,7 +316,7 @@ class Identity:
         return result
 
 
-def encrypt(path, recipients, outpath=None, armor=True):
+def encrypt(path, recipients, outpath=None, armor=False):
     if not recipients:
         raise ValueError('At least one recipient needs to be specified.')
     if not os.path.isfile(path):
@@ -438,7 +438,7 @@ def verify(path, identity, sigpath=None):
     _run_command(cmd, os.getcwd())
 
 
-def encrypt_and_sign(path, recipients, signer, armor=True, outpath=None, sigpath=None):
+def encrypt_and_sign(path, recipients, signer, armor=False, outpath=None, sigpath=None):
     if not recipients or not signer:
         raise ValueError('At least one recipient and one signer needs to be specified.')
     if not os.path.isfile(path):
