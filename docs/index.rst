@@ -54,10 +54,12 @@ Acknowledgements
 
 The ``pagesign`` module follows a similar approach to `python-gnupg
 <https://docs.red-dove.com/python-gnupg/>`_ (by the same author), and uses Python's
-``subprocess`` module to communicate with the `age` and `minisign` executables, which
-it uses to spawn subprocesses to do the real work of encryption, decryption, signing
-and verification.
+``subprocess`` module to communicate with the `age-keygen`, `age` and `minisign`
+executables, which it uses to spawn subprocesses to do the real work of encryption,
+decryption, signing and verification.
 
+Of course this module wouldn't exist without the great work by the `age` and `minisign`
+developers.
 
 Before you Start
 ================
@@ -73,6 +75,12 @@ access (permission mask of octal 0700).
 This directory will contain an identity store (called `keystore` from now on, as it
 mainly holds keys). On POSIX, its permissions are set so only the owner has full
 access, and everyone else has no access (permission mask of octal 0600).
+
+Although identity names could be email addresses (as used with GnuPG, for example) but
+they could equally be things like `'project-X-signing'` or similar, reflecting
+their function rather than a person or organisation. However, keys that are exported
+for sharing and then imported should be saved with a name that indicates unambiguously
+what they are / where they're from.
 
 .. index:: Getting started
 
