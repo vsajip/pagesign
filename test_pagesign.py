@@ -11,8 +11,8 @@ import sys
 import tempfile
 import unittest
 
-from pagesign import (Identity, encrypt, decrypt, sign, verify,
-                      encrypt_and_sign, verify_and_decrypt,
+from pagesign import (Identity, encrypt, encrypt_mem, decrypt, decrypt_mem,
+                      sign, verify, encrypt_and_sign, verify_and_decrypt,
                       remove_identities, clear_identities, list_identities)
 
 DEBUGGING = 'PY_DEBUG' in os.environ
@@ -76,7 +76,7 @@ class BasicTest(BaseTest):
             data = b'Hello, world!'
             os.write(fd, data)
             os.close(fd)
-            encrypted = encrypt(fn, recipients='bob', armor=armor)
+            encrypted = encrypt(fn, 'bob', armor=armor)
             self.addCleanup(os.remove, encrypted)
             # Now sign it
             signed = sign(encrypted, 'alice')
@@ -86,7 +86,7 @@ class BasicTest(BaseTest):
             fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
             os.close(fd)
             self.addCleanup(os.remove, fn)
-            decrypted = decrypt(encrypted, outpath=fn, identities='bob')
+            decrypted = decrypt(encrypted, 'bob', fn)
             with open(decrypted, 'rb') as f:
                 ddata = f.read()
             self.assertEqual(data, ddata)
@@ -130,6 +130,17 @@ class BasicTest(BaseTest):
             with open(decrypted, 'rb') as f:
                 ddata = f.read()
             self.assertEqual(data, ddata)
+
+    def test_encryption_in_memory(self):
+        identity = Identity()
+        identity.save('alice')
+        identity = Identity()
+        identity.save('bob')
+        data = 'Hello, world!'
+        for armor in (False, True):
+            encrypted = encrypt_mem(data, 'bob', armor=armor)
+            decrypted = decrypt_mem(encrypted, 'bob')
+            self.assertEqual(decrypted, data.encode('utf-8'))
 
     def ztest_encryption_passphrase(self):
         fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
@@ -177,6 +188,7 @@ def main():
             # with open(existing, 'w', encoding='utf-8') as f:
                 # json.dump(preserved, indent=2, sort_keys=True)
             os.remove(backup)
+
 
 if __name__ == '__main__':
     try:

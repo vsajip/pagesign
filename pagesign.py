@@ -103,14 +103,14 @@ def _make_password(length):
     return base64.b64encode(os.urandom(length)).decode('ascii')
 
 
-def _read_out(stream, result):
+def _read_out(stream, result, key='stdout'):
     data = b''
     while True:
         c = stream.read1(100)
         if not c:
             break
         data += c
-    result['stdout'] = data
+    result[key] = data
 
 
 def _read_age_encrypt_err(passphrase, stream, stdin, result):
@@ -150,7 +150,7 @@ def _read_age_decrypt_err(passphrase, stream, stdin, result):
     result['stderr'] = data
 
 
-def _run_command(cmd, wd, err_reader=None):
+def _run_command(cmd, wd, err_reader=None, decode=True):
     # print('Running: %s' % (cmd if isinstance(cmd, str) else ' '.join(cmd)))
     # if cmd[0] == 'age': import pdb; pdb.set_trace()
     if not isinstance(cmd, list):
@@ -188,7 +188,10 @@ def _run_command(cmd, wd, err_reader=None):
         p.stderr.close()
 
     if p.returncode == 0:
-        return stdout.decode('utf-8'), stderr.decode('utf-8')
+        if decode:
+            stdout = stdout.decode('utf-8')
+            stderr = stderr.decode('utf-8')
+        return stdout, stderr
     else:
         # import pdb; pdb.set_trace()
         if False:
@@ -316,9 +319,25 @@ class Identity:
         return result
 
 
-def encrypt(path, recipients, outpath=None, armor=False):
+def _get_encryption_command(recipients, armor):
     if not recipients:
         raise ValueError('At least one recipient needs to be specified.')
+    result = ['age', '-e']
+    if armor:
+        result.append('-a')
+    if isinstance(recipients, str):
+        recipients = [recipients]
+    if not isinstance(recipients, (list, tuple)):
+        raise ValueError('invalid recipients: %s' % recipients)
+    for r in recipients:
+        if r not in KEYS:
+            raise ValueError('No such recipient: %s' % r)
+        info = KEYS[r]
+        result.extend(['-r', info['crypt_public']])
+    return result
+
+
+def encrypt(path, recipients, outpath=None, armor=False):
     if not os.path.isfile(path):
         raise ValueError('No such file: %s' % path)
     if outpath is None:
@@ -331,42 +350,33 @@ def encrypt(path, recipients, outpath=None, armor=False):
             raise ValueError('Not a directory: %s' % d)
         # if dir, assume writeable, for now
 
-    cmd = ['age', '-e']
-    if armor:
-        cmd.append('-a')
-    if isinstance(recipients, str):
-        recipients = [recipients]
-    if not isinstance(recipients, (list, tuple)):
-        raise ValueError('invalid recipients: %s' % recipients)
-    for r in recipients:
-        if r not in KEYS:
-            raise ValueError('No such recipient: %s' % r)
-        info = KEYS[r]
-        cmd.extend(['-r', info['crypt_public']])
+    cmd = _get_encryption_command(recipients, armor)
     cmd.extend(['-o', outpath])
     cmd.append(path)
     _run_command(cmd, os.getcwd())
     return outpath
 
 
-def decrypt(path, identities, outpath=None):
+def _data_writer(data, stream, stdin, result):
+    stdin.write(data)
+    stdin.close()
+    _read_out(stream, result, 'stderr')
+
+
+def encrypt_mem(data, recipients, armor=False):
+    cmd = _get_encryption_command(recipients, armor)
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+    if not isinstance(data, bytes):
+        raise TypeError('invalid data: %s' % data)
+    err_reader = functools.partial(_data_writer, data)
+    stdout, stderr = _run_command(cmd, os.getcwd(), err_reader, False)
+    return stdout
+
+
+def _get_decryption_command(identities):
     if not identities:
         raise ValueError('At least one identity needs to be specified.')
-    if not os.path.isfile(path):
-        raise ValueError('No such file: %s' % path)
-    if outpath is None:
-        if path.endswith('.age'):
-            outpath = path[:-4]
-        else:
-            outpath = '%s.dec' % path
-    else:
-        d = os.path.dirname(outpath)
-        if not os.path.exists(d):
-            os.makedirs(d)
-        elif not os.path.isdir(d):
-            raise ValueError('Not a directory: %s' % d)
-        # if dir, assume writeable, for now
-
     cmd = ['age', '-d']
     if isinstance(identities, str):
         identities = [identities]
@@ -382,12 +392,46 @@ def decrypt(path, identities, outpath=None):
     with open(fn, 'w', encoding='utf-8') as f:
         f.write('\n'.join(ident_values))
     cmd.extend(['-i', fn])
+    return cmd, fn
+
+
+def decrypt(path, identities, outpath=None):
+    if not os.path.isfile(path):
+        raise ValueError('No such file: %s' % path)
+    if outpath is None:
+        if path.endswith('.age'):
+            outpath = path[:-4]
+        else:
+            outpath = '%s.dec' % path
+    else:
+        d = os.path.dirname(outpath)
+        if not os.path.exists(d):
+            os.makedirs(d)
+        elif not os.path.isdir(d):
+            raise ValueError('Not a directory: %s' % d)
+        # if dir, assume writeable, for now
+
+    cmd, fn = _get_decryption_command(identities)
     # import pdb; pdb.set_trace()
     try:
         cmd.extend(['-o', outpath])
         cmd.append(path)
         _run_command(cmd, os.getcwd())
         return outpath
+    finally:
+        os.remove(fn)
+
+
+def decrypt_mem(data, identities):
+    cmd, fn = _get_decryption_command(identities)
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+    if not isinstance(data, bytes):
+        raise TypeError('invalid data: %s' % data)
+    err_reader = functools.partial(_data_writer, data)
+    try:
+        stdout, stderr = _run_command(cmd, os.getcwd(), err_reader, False)
+        return stdout
     finally:
         os.remove(fn)
 
@@ -446,6 +490,7 @@ def encrypt_and_sign(path, recipients, signer, armor=False, outpath=None, sigpat
     outpath = encrypt(path, recipients, outpath=outpath, armor=armor)
     sigpath = sign(outpath, signer, outpath=sigpath)
     return outpath, sigpath
+
 
 def verify_and_decrypt(path, recipients, signer, outpath=None, sigpath=None):
     if not signer or not recipients:

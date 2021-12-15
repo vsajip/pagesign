@@ -381,6 +381,30 @@ To decrypt a message, use the `decrypt` function:
 
    The function returns `outpath` if successful and raises an exception if not.
 
+Encryption and Decryption in memory
+===================================
+
+You can encrypt and decrypt in memory using the following functions:
+
+.. function:: encrypt_mem(data: Union[str, bytes] , recipients: Union[str, list[str]], armor: bool = False) -> bytes
+
+   Encrypt data in `data` and return the encrypted value as a bytestring. If `data` is
+   a string, it is encoded to binary using UTF-8 encoding. If `armor` is `True`, the
+   output is PEM encoded. The `recipients` can be a single identity name or a list or
+   tuple of identity names. The encrypted result will be decryptable by any of the
+   recipient identities.
+
+   .. versionadded:: 0.1.1
+
+.. function:: decrypt_mem(data: Union[str, bytes] , identities: Union[str, list[str]]) -> bytes
+
+   Decrypt data in `data` and return the decrypted value as a bytestring. If `data` is
+   a string, it is encoded to binary using UTF-8 encoding. (This really only makes
+   sense if the encrypted data is in PEM format.) The `identities` can be a single
+   identity name or a list or tuple of identity names.
+
+   .. versionadded:: 0.1.1
+
 Signing and Verification
 ========================
 
@@ -389,6 +413,10 @@ recipient can verify the signed data using the corresponding public key.
 
 Signatures are always stored 'detached', i.e. in separate files from what they are
 signing.
+
+Note that although encryption and decryption can be performed in memory, there is no
+analoguous in-memory API for signing and verification, because `minisign` only signs
+and verifies signature files against source files and identities.
 
 .. index:: Signing
 
