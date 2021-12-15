@@ -22,9 +22,6 @@
 .. sectionauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
 
 
-.. toctree::
-   :maxdepth: 4
-
 The ``pagesign`` (for 'Python-age-sign') module allows Python programs to make use of
 the functionality provided by `age <https://age-encryption.org/>`_ and `minisign
 <https://jedisct1.github.io/minisign/>`_. Using this module, Python programs can
@@ -535,3 +532,8 @@ Index
 =====
 
 * :ref:`genindex`
+
+.. cssclass:: hidden
+
+.. toctree::
+   :maxdepth: 4
