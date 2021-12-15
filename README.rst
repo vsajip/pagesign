@@ -43,6 +43,11 @@ Credits
 
 * The developers of `age` and `minisign`.
 
+API Documentation
+=================
+
+https://docs.red-dove.com/pagesign/
+
 Change log
 ==========
 
