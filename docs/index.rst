@@ -448,7 +448,8 @@ To verify some data which you've received, use the `verify()` function:
 Combining operations
 ====================
 
-Often, you want to combine encryption and signing, or verification before decryption.
+Often, you may want to combine encryption and signing, or verification before
+decryption. However, please note the caveats listed in :ref:`problems`.
 
 Using signing and encryption together
 -------------------------------------
@@ -483,6 +484,21 @@ As a counterpart to `encrypt_and_sign()`, there's also `verify_and_decrypt()`:
    If `outpath` isn't specified, it is computed as in :func:`decrypt`.
 
    The function returns `outpath` if successful and raises an exception if not.
+
+.. _problems:
+
+Problems with naïve combination of signing and encryption
+=========================================================
+
+Naïvely combining encryption and signing can lead to problems. These are described in
+some depth in `Don Davis' paper on the subject <https://archive.ph/VFWcb>`_. While
+`pagesign` provides access to encryption and signing primitives and allows a
+relatively easy means of combining them, the actual data to be encrypted and signed
+needs to be constructed with care. The solutions proposed in `Section 5 of Davis'
+paper <https://archive.ph/VFWcb#Repair>`_ involve combining data with identities
+during signing and encryption, and at present `pagesign` leaves the decisions on how
+to do that up to you. The question of key distribution in a trustworthy way is also
+currently out of scope for `pagesign`.
 
 .. index:: Logging
 
