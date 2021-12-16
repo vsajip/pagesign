@@ -4,6 +4,7 @@
 #
 import base64
 import functools
+import hashlib
 import json
 import logging
 import os
@@ -207,6 +208,12 @@ def _run_command(cmd, wd, err_reader=None, decode=True):
                                             output=stdout, stderr=stderr)
 
 
+def _get_work_file(**kwargs):
+    fd, result = tempfile.mkstemp(**kwargs)
+    os.close(fd)
+    return result
+
+
 class Identity:
 
     encoding = 'utf-8'
@@ -237,10 +244,8 @@ class Identity:
                 m = ASK_PATTERN.match(line)
                 if m:
                     self.crypt_secret = line
-            fd, sfn = tempfile.mkstemp(prefix='msk-', dir=wd)
-            os.close(fd)
-            fd, pfn = tempfile.mkstemp(prefix='mpk-', dir=wd)
-            os.close(fd)
+            sfn = _get_work_file(prefix='msk-', dir=wd)
+            pfn = _get_work_file(prefix='mpk-', dir=wd)
             self.sign_pass = _make_password(12)
             cmd = 'minisign -fG -p %s -s %s' % (pfn, sfn)
             _run_command(cmd, wd, self._read_minisign_gen_err)
@@ -382,8 +387,7 @@ def _get_decryption_command(identities):
         identities = [identities]
     if not isinstance(identities, (list, tuple)):
         raise ValueError('invalid identities: %s' % identities)
-    fd, fn = tempfile.mkstemp(dir=PAGESIGN_DIR, prefix='ident-')
-    os.close(fd)
+    fn = _get_work_file(dir=PAGESIGN_DIR, prefix='ident-')
     ident_values = []
     for ident in identities:
         if ident not in KEYS:
@@ -482,22 +486,99 @@ def verify(path, identity, sigpath=None):
     _run_command(cmd, os.getcwd())
 
 
+def _get_b64(path):
+    with open(path, 'rb') as f:
+        return base64.b64encode(f.read()).decode('ascii')
+
+
 def encrypt_and_sign(path, recipients, signer, armor=False, outpath=None, sigpath=None):
     if not recipients or not signer:
-        raise ValueError('At least one recipient and one signer needs to be specified.')
+        raise ValueError('At least one recipient (and one signer) needs to be specified.')
     if not os.path.isfile(path):
         raise ValueError('No such file: %s' % path)
-    outpath = encrypt(path, recipients, outpath=outpath, armor=armor)
-    sigpath = sign(outpath, signer, outpath=sigpath)
-    return outpath, sigpath
+    naive = False
+    if naive:
+        outpath = encrypt(path, recipients, outpath=outpath, armor=armor)
+        sigpath = sign(outpath, signer, outpath=sigpath)
+        return outpath, sigpath
+    else:
+        # Use a sign/encrypt/sign strategy:
+        # 1. Sign the plaintext.
+        # 2. Construct a JSON of the base64-encoded plaintext and signature.
+        # 3. Encrypt that.
+        # 4. Hash all the recipient public keys into a list.
+        # 5. Construct a JSON of the encrypted data and recipient hashes.
+        # 6. Sign that.
+        fn = _get_work_file(dir=PAGESIGN_DIR, prefix='sig-')
+        sigpath = sign(path, signer, fn)
+        inner = {
+            'plaintext': _get_b64(path),
+            'signature': _get_b64(sigpath)
+        }
+        os.remove(sigpath)
+        data = json.dumps(inner).encode('ascii')
+        encrypted = encrypt_mem(data, recipients, armor)
+        if not armor:
+            encrypted = base64.b64encode(encrypted)
+        if isinstance(recipients, str):
+            recipients = [recipients]
+        # if we encrypted OK, there can't have been problems with the recipients
+        hashes = []
+        for r in recipients:
+            info = KEYS[r]
+            pk = info['crypt_public'].encode('ascii')
+            hashes.append(hashlib.sha256(pk).hexdigest())
+        outer = {
+            'encrypted': encrypted.decode('ascii'),
+            'armored': armor,
+            'recipients': hashes
+        }
+        data = json.dumps(outer).encode('ascii')
+        outpath = _get_work_file(dir=PAGESIGN_DIR, prefix='message-')
+        with open(outpath, 'wb') as f:
+            f.write(data)
+        sigpath = sign(outpath, signer)
+        return outpath, sigpath
 
 
 def verify_and_decrypt(path, recipients, signer, outpath=None, sigpath=None):
     if not signer or not recipients:
-        raise ValueError('At least one recipient and one signer needs to be specified.')
+        raise ValueError('At least one recipient (and one signer) needs to be specified.')
     if not os.path.isfile(path):
         raise ValueError('No such file: %s' % path)
     if sigpath is None:
         sigpath = path + '.sig'
+    if not os.path.exists(sigpath):
+        raise ValueError('no such file: %s' % sigpath)
     verify(path, signer, sigpath)
-    return decrypt(path, recipients, outpath)
+    naive = False
+    if naive:
+        return decrypt(path, recipients, outpath)
+    else:
+        with open(path, 'r', encoding='ascii') as f:
+            outer = json.load(f)
+        encrypted = outer['encrypted'].encode('ascii')
+        if not outer['armored']:
+            encrypted = base64.b64decode(encrypted)
+        hashes = set(outer['recipients'])
+        if isinstance(recipients, str):
+            recipients = [recipients]
+        for r in recipients:
+            if r not in KEYS:
+                raise ValueError('No such recipient: %s' % r)
+            info = KEYS[r]
+            pk = info['crypt_public'].encode('ascii')
+            h = hashlib.sha256(pk).hexdigest()
+            if h not in hashes:
+                raise ValueError('Not a valid recipient: %s' % r)
+        decrypted = decrypt_mem(encrypted, recipients).decode('ascii')
+        inner = json.loads(decrypted)
+        fd, outpath = tempfile.mkstemp(dir=PAGESIGN_DIR, prefix='msg-')
+        os.write(fd, base64.b64decode(inner['plaintext'].encode('ascii')))
+        os.close(fd)
+        sigpath = outpath + '.sig'
+        with open(sigpath, 'wb') as f:
+            f.write(base64.b64decode(inner['signature'].encode('ascii')))
+        verify(outpath, signer, sigpath)
+        os.remove(sigpath)
+        return outpath

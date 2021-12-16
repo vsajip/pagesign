@@ -469,6 +469,18 @@ If you want to use signing and encryption together, use `encrypt_and_sign()`:
    The function returns `(outpath`, sigpath)` if successful and raises an exception if
    not.
 
+   .. versionchanged:: 0.1.1
+
+   The algorithm has changed from a naïve encrypt and sign operation to:
+
+   #. Sign the plaintext.
+   #. Construct a JSON object of the base64-encoded plaintext and signature.
+   #. Encrypt that.
+   #. Compute the SHA-256 hashes of all recipients' public keys into an array.
+   #. Construct a JSON object of the encrypted data and hashes.
+   #. Sign that and save it and its signature.
+
+
 Using verification and decryption together
 ------------------------------------------
 
@@ -485,6 +497,11 @@ As a counterpart to `encrypt_and_sign()`, there's also `verify_and_decrypt()`:
 
    The function returns `outpath` if successful and raises an exception if not.
 
+   .. versionchanged:: 0.1.1
+
+   The files passed to this function must have been produced by
+   :func:`encrypt_and_sign`, as we need to reverse the algoritm which is applied there.
+
 .. _problems:
 
 Problems with naïve combination of signing and encryption
@@ -496,9 +513,11 @@ some depth in `Don Davis' paper on the subject <https://archive.ph/VFWcb>`_. Whi
 relatively easy means of combining them, the actual data to be encrypted and signed
 needs to be constructed with care. The solutions proposed in `Section 5 of Davis'
 paper <https://archive.ph/VFWcb#Repair>`_ involve combining data with identities
-during signing and encryption, and at present `pagesign` leaves the decisions on how
-to do that up to you. The question of key distribution in a trustworthy way is also
-currently out of scope for `pagesign`.
+during signing and encryption.
+
+The question of key distribution in a trustworthy way is currently out of scope for
+`pagesign` - you are expected to get exported keys securely to people you need to
+exchange data with, and they are expected to get their public keys to you securely.
 
 .. index:: Logging
 
