@@ -91,6 +91,12 @@ pygments_style = 'sphinx'
 
 # -- Options for HTML output ---------------------------------------------------
 
+HTML_THEME_OPTIONS = {
+    'sizzle': {
+        'sitemap_url': 'https://docs.red-dove.com/pagesign/'
+    }
+}
+
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 html_theme = os.environ.get('DOCS_THEME', 'default')

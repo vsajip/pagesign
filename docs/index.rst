@@ -378,6 +378,9 @@ To decrypt a message, use the `decrypt` function:
 
    The function returns `outpath` if successful and raises an exception if not.
 
+.. index::
+    single: Memory; encrypting and decrypting in
+
 Encryption and Decryption in memory
 ===================================
 
@@ -445,6 +448,9 @@ To verify some data which you've received, use the `verify()` function:
 
    The function raises an exception if verification fails.
 
+.. index::
+    single: Operations; combining encryption and signing
+
 Combining operations
 ====================
 
@@ -480,6 +486,8 @@ If you want to use signing and encryption together, use `encrypt_and_sign()`:
    #. Construct a JSON object of the encrypted data and hashes.
    #. Sign that and save it and its signature.
 
+   This corresponds to `Section 5.2 of the Davis paper
+   <https://archive.ph/VFWcb#SES>`_.
 
 Using verification and decryption together
 ------------------------------------------
@@ -501,6 +509,9 @@ As a counterpart to `encrypt_and_sign()`, there's also `verify_and_decrypt()`:
 
    The files passed to this function must have been produced by
    :func:`encrypt_and_sign`, as we need to reverse the algoritm which is applied there.
+
+.. index::
+    single: Caveats; combining encryption and signing
 
 .. _problems:
 
@@ -562,11 +573,6 @@ be gratefully received.
 The source code repository is `here <https://github.com/vsajip/pagesign>`__.
 
 .. cssclass:: hidden
-
-Index
-=====
-
-* :ref:`genindex`
 
 .. cssclass:: hidden
 
