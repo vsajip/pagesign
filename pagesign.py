@@ -214,6 +214,18 @@ def _get_work_file(**kwargs):
     return result
 
 
+def _shred(path, delete=True):
+    size = os.stat(path).st_size
+    passes = 2
+    with open(path, 'wb') as f:
+        for i in range(passes):
+            if i > 0:
+                f.seek(0)
+            f.write(os.urandom(size))
+    if delete:
+        os.remove(path)
+
+
 class Identity:
 
     encoding = 'utf-8'
@@ -227,39 +239,43 @@ class Identity:
         else:
             # Generate a new identity
             wd = tempfile.mkdtemp(dir=PAGESIGN_DIR, prefix='work-')
-            p = os.path.join(wd, 'age-key')
-            cmd = 'age-keygen -o %s' % p
-            _run_command(cmd, wd)
-            with open(p, encoding=self.encoding) as f:
-                lines = f.read().splitlines()
-            for line in lines:
-                m = CREATED_PATTERN.match(line)
-                if m:
-                    self.created = m.groups()[0]
-                    continue
-                m = APK_PATTERN.match(line)
-                if m:
-                    self.crypt_public = m.groups()[0]
-                    continue
-                m = ASK_PATTERN.match(line)
-                if m:
-                    self.crypt_secret = line
-            sfn = _get_work_file(prefix='msk-', dir=wd)
-            pfn = _get_work_file(prefix='mpk-', dir=wd)
-            self.sign_pass = _make_password(12)
-            cmd = 'minisign -fG -p %s -s %s' % (pfn, sfn)
-            _run_command(cmd, wd, self._read_minisign_gen_err)
-            with open(pfn, encoding=self.encoding) as f:
-                lines = f.read().splitlines()
+            try:
+                p = os.path.join(wd, 'age-key')
+                cmd = 'age-keygen -o %s' % p
+                _run_command(cmd, wd)
+                with open(p, encoding=self.encoding) as f:
+                    lines = f.read().splitlines()
                 for line in lines:
-                    m = MPI_PATTERN.search(line)
+                    m = CREATED_PATTERN.match(line)
                     if m:
-                        self.sign_id = m.groups()[0]
-                    else:
-                        self.sign_public = line
-            with open(sfn, encoding=self.encoding) as f:
-                self.sign_secret = f.read()
-            shutil.rmtree(wd)
+                        self.created = m.groups()[0]
+                        continue
+                    m = APK_PATTERN.match(line)
+                    if m:
+                        self.crypt_public = m.groups()[0]
+                        continue
+                    m = ASK_PATTERN.match(line)
+                    if m:
+                        self.crypt_secret = line
+                _shred(p, False)  # the whole directory will get removed
+                sfn = _get_work_file(prefix='msk-', dir=wd)
+                pfn = _get_work_file(prefix='mpk-', dir=wd)
+                self.sign_pass = _make_password(12)
+                cmd = 'minisign -fG -p %s -s %s' % (pfn, sfn)
+                _run_command(cmd, wd, self._read_minisign_gen_err)
+                with open(pfn, encoding=self.encoding) as f:
+                    lines = f.read().splitlines()
+                    for line in lines:
+                        m = MPI_PATTERN.search(line)
+                        if m:
+                            self.sign_id = m.groups()[0]
+                        else:
+                            self.sign_public = line
+                with open(sfn, encoding=self.encoding) as f:
+                    self.sign_secret = f.read()
+                _shred(sfn, False)  # the whole directory will get removed
+            finally:
+                shutil.rmtree(wd)
 
             for attr in ATTRS:
                 assert hasattr(self, attr)
@@ -423,7 +439,7 @@ def decrypt(path, identities, outpath=None):
         _run_command(cmd, os.getcwd())
         return outpath
     finally:
-        os.remove(fn)
+        _shred(fn)
 
 
 def decrypt_mem(data, identities):
@@ -437,7 +453,7 @@ def decrypt_mem(data, identities):
         stdout, stderr = _run_command(cmd, os.getcwd(), err_reader, False)
         return stdout
     finally:
-        os.remove(fn)
+        _shred(fn)
 
 
 def sign(path, identity, outpath=None):
@@ -465,7 +481,7 @@ def sign(path, identity, outpath=None):
         cmd = ['minisign', '-S', '-x', outpath, '-s', fn, '-m', path]
         _run_command(cmd, os.getcwd(), ident._read_minisign_sign_err)
     finally:
-        os.remove(fn)
+        _shred(fn)
     return outpath
 
 
