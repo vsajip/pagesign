@@ -142,21 +142,21 @@ class BasicTest(BaseTest):
             decrypted = decrypt_mem(encrypted, 'bob')
             self.assertEqual(decrypted, data.encode('utf-8'))
 
-    def ztest_encryption_passphrase(self):
-        fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
-        self.addCleanup(os.remove, fn)
-        data = b'Hello, world!'
-        os.write(fd, data)
-        os.close(fd)
-        passphrase = 'correct-horse-battery-staple'
-        encrypted = encrypt(fn, passphrase=passphrase)
-        self.addCleanup(os.remove, encrypted)
-        fn = _get_work_file(prefix='test-pagesign-')
-        self.addCleanup(os.remove, fn)
-        decrypted = decrypt(encrypted, outpath=fn, passphrase=passphrase)
-        with open(decrypted, 'rb') as f:
-            ddata = f.read()
-        self.assertEqual(data, ddata)
+    # def ztest_encryption_passphrase(self):
+        # fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
+        # self.addCleanup(os.remove, fn)
+        # data = b'Hello, world!'
+        # os.write(fd, data)
+        # os.close(fd)
+        # passphrase = 'correct-horse-battery-staple'
+        # encrypted = encrypt(fn, passphrase=passphrase)
+        # self.addCleanup(os.remove, encrypted)
+        # fn = _get_work_file(prefix='test-pagesign-')
+        # self.addCleanup(os.remove, fn)
+        # decrypted = decrypt(encrypted, outpath=fn, passphrase=passphrase)
+        # with open(decrypted, 'rb') as f:
+            # ddata = f.read()
+        # self.assertEqual(data, ddata)
 
 
 def main():
@@ -164,7 +164,7 @@ def main():
     fn = os.path.splitext(fn)[0]
     lfn = os.path.expanduser('~/logs/%s.log' % fn)
     d = os.path.dirname(lfn)
-    if not os.path.exists(d):
+    if not os.path.exists(d):  # pragma: no cover
         os.makedirs(d)
     if os.path.isdir(os.path.dirname(lfn)):
         logging.basicConfig(level=logging.DEBUG, filename=lfn, filemode='w',
@@ -172,7 +172,7 @@ def main():
     # Is there an existing store?
     from pagesign import PAGESIGN_DIR
     existing = os.path.join(PAGESIGN_DIR, 'keys')
-    if not os.path.exists(existing):
+    if not os.path.exists(existing):  # pragma: no cover
         preserved = backup = None
     else:
         with open(existing, encoding='utf-8') as f:
@@ -194,7 +194,7 @@ if __name__ == '__main__':
         rc = main()
     except KeyboardInterrupt:
         rc = 2
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         if DEBUGGING:
             s = ' %s:' % type(e).__name__
         else:

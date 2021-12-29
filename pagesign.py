@@ -20,7 +20,7 @@ __version__ = '0.1.1.dev0'
 __author__ = 'Vinay Sajip'
 __date__ = "$05-Dec-2021 12:39:53$"
 
-if sys.version_info[:2] < (3, 6):
+if sys.version_info[:2] < (3, 6):  # pragma: no cover
     raise ImportError('This module requires Python >= 3.6 to run.')
 
 logger = logging.getLogger(__name__)
@@ -48,10 +48,10 @@ APK_PATTERN = re.compile('# public key: (.*)', re.I)
 ASK_PATTERN = re.compile(r'AGE-SECRET-KEY-.*')
 MPI_PATTERN = re.compile(r'minisign public key (\S+)')
 
-if not os.path.exists(PAGESIGN_DIR):
+if not os.path.exists(PAGESIGN_DIR):  # pragma: no cover
     os.makedirs(PAGESIGN_DIR)
 
-if not os.path.isdir(PAGESIGN_DIR):
+if not os.path.isdir(PAGESIGN_DIR):  # pragma: no cover
     raise ValueError('%s exists but is not a directory.' % PAGESIGN_DIR)
 
 os.chmod(PAGESIGN_DIR, 0o700)
@@ -114,41 +114,41 @@ def _read_out(stream, result, key='stdout'):
     result[key] = data
 
 
-def _read_age_encrypt_err(passphrase, stream, stdin, result):
-    data = b''
-    pwd = (passphrase + os.linesep).encode('ascii')
-    pwd_written = 0
-    sep = os.linesep.encode('ascii')
-    prompt1 = b'Enter passphrase (leave empty to autogenerate a secure one): '
-    prompt2 = prompt1 + sep + b'Confirm passphrase: '
-    prompts = (prompt1, prompt2)
-    while True:
-        c = stream.read1(100)
-        data += c
-        # print('err: %s' % data)
-        if data in prompts:
-            stdin.write(pwd)
-            stdin.flush()
-            pwd_written += 1
-            if pwd_written == 2:
-                stdin.close()
-                break
-    result['stderr'] = data
+# def _read_age_encrypt_err(passphrase, stream, stdin, result):
+    # data = b''
+    # pwd = (passphrase + os.linesep).encode('ascii')
+    # pwd_written = 0
+    # sep = os.linesep.encode('ascii')
+    # prompt1 = b'Enter passphrase (leave empty to autogenerate a secure one): '
+    # prompt2 = prompt1 + sep + b'Confirm passphrase: '
+    # prompts = (prompt1, prompt2)
+    # while True:
+        # c = stream.read1(100)
+        # data += c
+        # # print('err: %s' % data)
+        # if data in prompts:
+            # stdin.write(pwd)
+            # stdin.flush()
+            # pwd_written += 1
+            # if pwd_written == 2:
+                # stdin.close()
+                # break
+    # result['stderr'] = data
 
 
-def _read_age_decrypt_err(passphrase, stream, stdin, result):
-    data = b''
-    pwd = (passphrase + os.linesep).encode('ascii')
-    while True:
-        c = stream.read1(100)
-        data += c
-        # print('err: %s' % data)
-        if data == b'Enter passphrase: ':
-            stdin.write(pwd)
-            stdin.flush()
-            stdin.close()
-            break
-    result['stderr'] = data
+# def _read_age_decrypt_err(passphrase, stream, stdin, result):
+    # data = b''
+    # pwd = (passphrase + os.linesep).encode('ascii')
+    # while True:
+        # c = stream.read1(100)
+        # data += c
+        # # print('err: %s' % data)
+        # if data == b'Enter passphrase: ':
+            # stdin.write(pwd)
+            # stdin.flush()
+            # stdin.close()
+            # break
+    # result['stderr'] = data
 
 
 def _run_command(cmd, wd, err_reader=None, decode=True):
@@ -193,17 +193,17 @@ def _run_command(cmd, wd, err_reader=None, decode=True):
             stdout = stdout.decode('utf-8')
             stderr = stderr.decode('utf-8')
         return stdout, stderr
-    else:
+    else:  # pragma: no cover
         # import pdb; pdb.set_trace()
-        if False:
-            print('Command %r failed with return code %d' % (cmd[0], p.returncode))
-            print('stdout was:')
-            if stdout:
-                print(stdout.decode('utf-8'))
-            print('stderr was:')
-            if stderr:
-                print(stderr.decode('utf-8'))
-            print('Raising an exception')
+        # if False:
+            # print('Command %r failed with return code %d' % (cmd[0], p.returncode))
+            # print('stdout was:')
+            # if stdout:
+                # print(stdout.decode('utf-8'))
+            # print('stderr was:')
+            # if stderr:
+                # print(stderr.decode('utf-8'))
+            # print('Raising an exception')
         raise subprocess.CalledProcessError(p.returncode, p.args,
                                             output=stdout, stderr=stderr)
 
@@ -234,7 +234,7 @@ class Identity:
         if name:
             if name in KEYS:
                 self.__dict__.update(KEYS[name])
-            else:
+            else:  # pragma: no cover
                 raise ValueError('No such identity: %r' % name)
         else:
             # Generate a new identity
@@ -334,14 +334,14 @@ class Identity:
         for k in PUBLIC_ATTRS:
             try:
                 setattr(result, k, d[k])
-            except KeyError:
+            except KeyError:  # pragma: no cover
                 logger.warning('Attribute absent: %s', k)
         result.save(name)
         return result
 
 
 def _get_encryption_command(recipients, armor):
-    if not recipients:
+    if not recipients:  # pragma: no cover
         raise ValueError('At least one recipient needs to be specified.')
     result = ['age', '-e']
     if armor:
@@ -351,7 +351,7 @@ def _get_encryption_command(recipients, armor):
     if not isinstance(recipients, (list, tuple)):
         raise ValueError('invalid recipients: %s' % recipients)
     for r in recipients:
-        if r not in KEYS:
+        if r not in KEYS:  # pragma: no cover
             raise ValueError('No such recipient: %s' % r)
         info = KEYS[r]
         result.extend(['-r', info['crypt_public']])
@@ -359,15 +359,15 @@ def _get_encryption_command(recipients, armor):
 
 
 def encrypt(path, recipients, outpath=None, armor=False):
-    if not os.path.isfile(path):
+    if not os.path.isfile(path):  # pragma: no cover
         raise ValueError('No such file: %s' % path)
     if outpath is None:
         outpath = '%s.age' % path
-    else:
+    else:  # pragma: no cover
         d = os.path.dirname(outpath)
         if not os.path.exists(d):
             os.makedirs(d)
-        elif not os.path.isdir(d):
+        elif not os.path.isdir(d):  # pragma: no cover
             raise ValueError('Not a directory: %s' % d)
         # if dir, assume writeable, for now
 
@@ -388,7 +388,7 @@ def encrypt_mem(data, recipients, armor=False):
     cmd = _get_encryption_command(recipients, armor)
     if isinstance(data, str):
         data = data.encode('utf-8')
-    if not isinstance(data, bytes):
+    if not isinstance(data, bytes):  # pragma: no cover
         raise TypeError('invalid data: %s' % data)
     err_reader = functools.partial(_data_writer, data)
     stdout, stderr = _run_command(cmd, os.getcwd(), err_reader, False)
@@ -396,17 +396,17 @@ def encrypt_mem(data, recipients, armor=False):
 
 
 def _get_decryption_command(identities):
-    if not identities:
+    if not identities:  # pragma: no cover
         raise ValueError('At least one identity needs to be specified.')
     cmd = ['age', '-d']
     if isinstance(identities, str):
         identities = [identities]
-    if not isinstance(identities, (list, tuple)):
+    if not isinstance(identities, (list, tuple)):  # pragma: no cover
         raise ValueError('invalid identities: %s' % identities)
     fn = _get_work_file(dir=PAGESIGN_DIR, prefix='ident-')
     ident_values = []
     for ident in identities:
-        if ident not in KEYS:
+        if ident not in KEYS:  # pragma: no cover
             raise ValueError('No such identity: %s' % ident)
         ident_values.append(KEYS[ident]['crypt_secret'])
     with open(fn, 'w', encoding='utf-8') as f:
@@ -416,7 +416,7 @@ def _get_decryption_command(identities):
 
 
 def decrypt(path, identities, outpath=None):
-    if not os.path.isfile(path):
+    if not os.path.isfile(path):  # pragma: no cover
         raise ValueError('No such file: %s' % path)
     if outpath is None:
         if path.endswith('.age'):
@@ -425,9 +425,9 @@ def decrypt(path, identities, outpath=None):
             outpath = '%s.dec' % path
     else:
         d = os.path.dirname(outpath)
-        if not os.path.exists(d):
+        if not os.path.exists(d):  # pragma: no cover
             os.makedirs(d)
-        elif not os.path.isdir(d):
+        elif not os.path.isdir(d):  # pragma: no cover
             raise ValueError('Not a directory: %s' % d)
         # if dir, assume writeable, for now
 
@@ -446,7 +446,7 @@ def decrypt_mem(data, identities):
     cmd, fn = _get_decryption_command(identities)
     if isinstance(data, str):
         data = data.encode('utf-8')
-    if not isinstance(data, bytes):
+    if not isinstance(data, bytes):  # pragma: no cover
         raise TypeError('invalid data: %s' % data)
     err_reader = functools.partial(_data_writer, data)
     try:
@@ -457,20 +457,20 @@ def decrypt_mem(data, identities):
 
 
 def sign(path, identity, outpath=None):
-    if not identity:
+    if not identity:  # pragma: no cover
         raise ValueError('An identity needs to be specified.')
-    if identity not in KEYS:
+    if identity not in KEYS:  # pragma: no cover
         raise ValueError('No such identity: %s' % identity)
     ident = Identity(identity)
-    if not os.path.isfile(path):
+    if not os.path.isfile(path):  # pragma: no cover
         raise ValueError('No such file: %s' % path)
     if outpath is None:
         outpath = '%s.sig' % path
     else:
         d = os.path.dirname(outpath)
-        if not os.path.exists(d):
+        if not os.path.exists(d):  # pragma: no cover
             os.makedirs(d)
-        elif not os.path.isdir(d):
+        elif not os.path.isdir(d):  # pragma: no cover
             raise ValueError('Not a directory: %s' % d)
         # if dir, assume writeable, for now
 
@@ -486,16 +486,16 @@ def sign(path, identity, outpath=None):
 
 
 def verify(path, identity, sigpath=None):
-    if not identity:
+    if not identity:  # pragma: no cover
         raise ValueError('An identity needs to be specified.')
-    if identity not in KEYS:
+    if identity not in KEYS:  # pragma: no cover
         raise ValueError('No such identity: %s' % identity)
     ident = Identity(identity)
-    if not os.path.isfile(path):
+    if not os.path.isfile(path):  # pragma: no cover
         raise ValueError('No such file: %s' % path)
     if sigpath is None:
         sigpath = '%s.sig' % path
-    if not os.path.isfile(sigpath):
+    if not os.path.isfile(sigpath):  # pragma: no cover
         raise ValueError('No such file: %s' % sigpath)
     cmd = ['minisign', '-V', '-x', sigpath, '-P', ident.sign_public, '-m', path]
     # import pdb; pdb.set_trace()
@@ -508,7 +508,7 @@ def _get_b64(path):
 
 
 def encrypt_and_sign(path, recipients, signer, armor=False, outpath=None, sigpath=None):
-    if not recipients or not signer:
+    if not recipients or not signer:  # pragma: no cover
         raise ValueError('At least one recipient (and one signer) needs to be specified.')
     if not os.path.isfile(path):
         raise ValueError('No such file: %s' % path)
@@ -558,13 +558,13 @@ def encrypt_and_sign(path, recipients, signer, armor=False, outpath=None, sigpat
 
 
 def verify_and_decrypt(path, recipients, signer, outpath=None, sigpath=None):
-    if not signer or not recipients:
+    if not signer or not recipients:  # pragma: no cover
         raise ValueError('At least one recipient (and one signer) needs to be specified.')
-    if not os.path.isfile(path):
+    if not os.path.isfile(path):  # pragma: no cover
         raise ValueError('No such file: %s' % path)
     if sigpath is None:
         sigpath = path + '.sig'
-    if not os.path.exists(sigpath):
+    if not os.path.exists(sigpath):  # pragma: no cover
         raise ValueError('no such file: %s' % sigpath)
     verify(path, signer, sigpath)
     naive = False
@@ -580,7 +580,7 @@ def verify_and_decrypt(path, recipients, signer, outpath=None, sigpath=None):
         if isinstance(recipients, str):
             recipients = [recipients]
         for r in recipients:
-            if r not in KEYS:
+            if r not in KEYS:  # pragma: no cover
                 raise ValueError('No such recipient: %s' % r)
             info = KEYS[r]
             pk = info['crypt_public'].encode('ascii')
