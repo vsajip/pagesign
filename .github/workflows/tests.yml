@@ -55,3 +55,14 @@ jobs:
         age --version
         minisign -v
         python test_pagesign.py
+    - name: Test with coverage
+      run: |
+        pip install coverage
+        coverage run --branch test_pagesign.py
+        coverage xml
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        flags: unittests
+        files: coverage.xml
+        fail_ci_if_error: true

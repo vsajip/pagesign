@@ -1,3 +1,12 @@
+|badge1| |badge2|
+
+.. |badge1| image:: https://img.shields.io/github/workflow/status/vsajip/pagesign/Tests
+   :alt: GitHub test status
+
+.. |badge2| image:: https://img.shields.io/codecov/c/github/vsajip/pagesign
+   :alt: GitHub coverage status
+
+
 What is it?
 ===========
 
