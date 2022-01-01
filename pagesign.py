@@ -444,7 +444,7 @@ def decrypt(path, identities, outpath=None):
 
 def decrypt_mem(data, identities):
     cmd, fn = _get_decryption_command(identities)
-    if isinstance(data, str):
+    if isinstance(data, str):  # pragma: no cover
         data = data.encode('utf-8')
     if not isinstance(data, bytes):  # pragma: no cover
         raise TypeError('invalid data: %s' % data)
@@ -513,7 +513,7 @@ def encrypt_and_sign(path, recipients, signer, armor=False, outpath=None, sigpat
     if not os.path.isfile(path):
         raise ValueError('No such file: %s' % path)
     naive = False
-    if naive:
+    if naive:  # pragma: no cover
         outpath = encrypt(path, recipients, outpath=outpath, armor=armor)
         sigpath = sign(outpath, signer, outpath=sigpath)
         return outpath, sigpath
@@ -568,7 +568,7 @@ def verify_and_decrypt(path, recipients, signer, outpath=None, sigpath=None):
         raise ValueError('no such file: %s' % sigpath)
     verify(path, signer, sigpath)
     naive = False
-    if naive:
+    if naive:  # pragma: no cover
         return decrypt(path, recipients, outpath)
     else:
         with open(path, 'r', encoding='ascii') as f:
@@ -585,7 +585,7 @@ def verify_and_decrypt(path, recipients, signer, outpath=None, sigpath=None):
             info = KEYS[r]
             pk = info['crypt_public'].encode('ascii')
             h = hashlib.sha256(pk).hexdigest()
-            if h not in hashes:
+            if h not in hashes:  # pragma: no cover
                 raise ValueError('Not a valid recipient: %s' % r)
         decrypted = decrypt_mem(encrypted, recipients).decode('ascii')
         inner = json.loads(decrypted)

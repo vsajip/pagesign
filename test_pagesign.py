@@ -192,7 +192,7 @@ def main():
 if __name__ == '__main__':
     try:
         rc = main()
-    except KeyboardInterrupt:
+    except KeyboardInterrupt:  # pragma: no cover
         rc = 2
     except Exception as e:  # pragma: no cover
         if DEBUGGING:
