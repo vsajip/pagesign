@@ -58,6 +58,48 @@ decryption, signing and verification.
 Of course this module wouldn't exist without the great work by the `age` and `minisign`
 developers.
 
+Installation
+============
+
+Installing from PyPI
+--------------------
+
+You can install this package from the Python Package Index (pyPI) by running::
+
+    pip install pagesign
+
+
+Installing from a source distribution archive
+---------------------------------------------
+To install this package from a source distribution archive, do the following:
+
+1. Extract all the files in the distribution archive to some directory on your
+   system.
+2. In that directory, run ``python setup.py install``.
+3. Optionally, run ``python test_pagesign.py`` to ensure that the package is
+   working as expected.
+
+Installing ``age``
+------------------
+
+You can get binary releases of the latest version of ``age`` for Linux, macOS and
+Windows from `here <https://github.com/FiloSottile/age/releases>`__. Alternatively,
+you might be able to use package managers such as your distro package manager (Linux),
+`MacPorts <https://ports.macports.org/port/age/>`__ or `Homebrew
+<https://formulae.brew.sh/formula/age>`__ (macOS) or `Chocolatey
+<https://community.chocolatey.org/packages/age.portable>`__ (Windows).
+
+Installing ``minisign``
+-----------------------
+
+You can get binary releases of the latest version of ``minisign`` for Linux, macOS and
+Windows from `here <https://jedisct1.github.io/minisign/>`__. Alternatively, you might
+be able to use package managers such as your distro package manager (Linux), `MacPorts
+<https://ports.macports.org/port/minisign/>`__ or `Homebrew
+<https://formulae.brew.sh/formula/minisign>`__ (macOS) or `Chocolatey
+<https://community.chocolatey.org/packages/minisign>`__ (Windows).
+
+
 Before you Start
 ================
 
