@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2021 Red Dove Consultants Limited
+# Copyright (C) 2021-2022 Red Dove Consultants Limited
 #
 import base64
 import functools

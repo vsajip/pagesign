@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2021 Red Dove Consultants Limited. MIT Licensed.
+# Copyright (C) 2021-2022 Red Dove Consultants Limited. MIT Licensed.
 #
 import json
 import logging

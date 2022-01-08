@@ -20,13 +20,18 @@ https://bitbucket.org/vinay.sajip/pagesign/downloads/
 
 The archives should be the same as those uploaded to PyPI.
 """,
-    license="""Copyright (C) 2021 by Vinay Sajip. All Rights Reserved. See LICENSE.txt for license.""",
+    license="""Copyright (C) 2021-2022 by Vinay Sajip. All Rights Reserved. See LICENSE.txt for license.""",
     version=version,
     author="Vinay Sajip",
     author_email="vinay_sajip@yahoo.co.uk",
     maintainer="Vinay Sajip",
     maintainer_email="vinay_sajip@yahoo.co.uk",
     url="https://docs.red-dove.com/pagesign/",
+    project_urls={
+        "Documentation": "https://docs.red-dove.com/pagesign/",
+        "Source": "https://github.com/vsajip/pagesign",
+        "Changelog": "https://github.com/vsajip/pagesign#change-log",
+    },
     py_modules=["pagesign"],
     platforms="No particular restrictions",
     download_url="https://pypi.io/packages/source/p/pagesign/pagesign-%s.tar.gz" % version,
