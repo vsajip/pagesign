@@ -348,7 +348,7 @@ def _get_encryption_command(recipients, armor):
         result.append('-a')
     if isinstance(recipients, str):
         recipients = [recipients]
-    if not isinstance(recipients, (list, tuple)):
+    if not isinstance(recipients, (list, tuple)):  # pragma: no cover
         raise ValueError('invalid recipients: %s' % recipients)
     for r in recipients:
         if r not in KEYS:  # pragma: no cover
@@ -510,7 +510,7 @@ def _get_b64(path):
 def encrypt_and_sign(path, recipients, signer, armor=False, outpath=None, sigpath=None):
     if not recipients or not signer:  # pragma: no cover
         raise ValueError('At least one recipient (and one signer) needs to be specified.')
-    if not os.path.isfile(path):
+    if not os.path.isfile(path):  # pragma: no cover
         raise ValueError('No such file: %s' % path)
     naive = False
     if naive:  # pragma: no cover
