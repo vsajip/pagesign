@@ -22,16 +22,18 @@ logger = logging.getLogger(__name__)
 
 
 class BaseTest(unittest.TestCase):
-    SEP = '-' * 60
+    HSEP = '=' * 60
+    FSEP = '-' * 60
 
     def setUp(self):
         ident = self.id().rsplit('.', 1)[-1]
+        logger.debug(self.HSEP)
         logger.debug('%s starting ...', ident)
-        logger.debug(self.SEP)
+        logger.debug(self.HSEP)
 
     def tearDown(self):
         ident = self.id().rsplit('.', 1)[-1]
-        logger.debug(self.SEP)
+        logger.debug(self.FSEP)
         logger.debug('%s finished.', ident)
 
 
@@ -141,6 +143,59 @@ class BasicTest(BaseTest):
             encrypted = encrypt_mem(data, 'bob', armor=armor)
             decrypted = decrypt_mem(encrypted, 'bob')
             self.assertEqual(decrypted, data.encode('utf-8'))
+
+    def test_default_paths(self):
+        identity = Identity()
+        identity.save('alice')
+        identity = Identity()
+        identity.save('bob')
+        fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
+        self.addCleanup(os.remove, fn)
+        data = b'Hello, world!'
+        os.write(fd, data)
+        os.close(fd)
+
+        # Encryption / decryption
+
+        # Test with no encrypted outpath
+        encrypted = encrypt(fn, 'alice')
+        self.assertEqual(encrypted, fn + '.age')
+        decrypted = decrypt(encrypted, 'alice')
+        self.assertEqual(decrypted, fn)
+        # Test with specified encrypted outpath
+        fd, ofn = tempfile.mkstemp(prefix='test-pagesign-')
+        os.close(fd)
+        encrypted = encrypt(fn, 'alice', outpath=ofn)
+        self.assertEqual(encrypted, ofn)
+        decrypted = decrypt(ofn, 'alice')
+        self.assertEqual(decrypted, ofn + '.dec')
+
+        # Signing / verification
+
+        # Test with no signed outpath
+        signed = sign(fn, 'alice')
+        self.assertEqual(signed, fn + '.sig')
+        verify(fn, 'alice')
+        # Test with specified signed outpath
+        signed = sign(fn, 'alice', outpath=ofn)
+        self.assertEqual(signed, ofn)
+        verify(fn, 'alice', sigpath=signed)
+
+        # Encryption and signing / decryption and verification together
+
+        # Using default paths
+
+        outpath, sigpath = encrypt_and_sign(fn, 'bob', 'alice')
+        self.addCleanup(os.remove, outpath)
+        self.addCleanup(os.remove, sigpath)
+        self.assertEqual(sigpath, outpath + '.sig')
+        dfn = _get_work_file(prefix='test-pagesign-')
+        self.addCleanup(os.remove, dfn)
+        decrypted = verify_and_decrypt(outpath, 'bob', 'alice', dfn, sigpath)
+        with open(decrypted, 'rb') as f:
+            ddata = f.read()
+        self.assertEqual(data, ddata)
+        os.remove(decrypted)
 
     # def ztest_encryption_passphrase(self):
         # fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
