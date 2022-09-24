@@ -60,7 +60,7 @@ os.chmod(PAGESIGN_DIR, 0o700)
 def _load_keys():
     result = {}
     p = os.path.join(PAGESIGN_DIR, 'keys')
-    if os.path.exists(p):
+    if os.path.exists(p):  # pragma: no branch
         with open(p, encoding='utf-8') as f:
             result = json.load(f)
     return result
@@ -194,16 +194,6 @@ def _run_command(cmd, wd, err_reader=None, decode=True):
             stderr = stderr.decode('utf-8')
         return stdout, stderr
     else:  # pragma: no cover
-        # import pdb; pdb.set_trace()
-        # if False:
-            # print('Command %r failed with return code %d' % (cmd[0], p.returncode))
-            # print('stdout was:')
-            # if stdout:
-                # print(stdout.decode('utf-8'))
-            # print('stderr was:')
-            # if stderr:
-                # print(stderr.decode('utf-8'))
-            # print('Raising an exception')
         raise subprocess.CalledProcessError(p.returncode, p.args,
                                             output=stdout, stderr=stderr)
 
@@ -255,8 +245,8 @@ class Identity:
                         self.crypt_public = m.groups()[0]
                         continue
                     m = ASK_PATTERN.match(line)
-                    if m:
-                        self.crypt_secret = line
+                    assert m, 'Secret key line not seen'
+                    self.crypt_secret = line
                 _shred(p, False)  # the whole directory will get removed
                 sfn = _get_work_file(prefix='msk-', dir=wd)
                 pfn = _get_work_file(prefix='mpk-', dir=wd)
@@ -363,9 +353,9 @@ def encrypt(path, recipients, outpath=None, armor=False):
         raise ValueError('No such file: %s' % path)
     if outpath is None:
         outpath = '%s.age' % path
-    else:  # pragma: no cover
+    else:
         d = os.path.dirname(outpath)
-        if not os.path.exists(d):
+        if not os.path.exists(d):  # pragma: no cover
             os.makedirs(d)
         elif not os.path.isdir(d):  # pragma: no cover
             raise ValueError('Not a directory: %s' % d)
