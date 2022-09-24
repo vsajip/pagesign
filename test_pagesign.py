@@ -42,6 +42,9 @@ class BasicTest(BaseTest):
         clear_identities()
         d = dict(list_identities())
         self.assertEqual(len(d), 0)
+        clear_identities()  # call again when already cleared (coverage)
+        d = dict(list_identities())
+        self.assertEqual(len(d), 0)
         names = {'bob', 'carol', 'ted', 'alice'}
         for name in names:
             identity = Identity()
@@ -49,6 +52,9 @@ class BasicTest(BaseTest):
         d = dict(list_identities())
         self.assertEqual(set(d), names)
         remove_identities('bob', 'alice')
+        d = dict(list_identities())
+        self.assertEqual(set(d), {'ted', 'carol'})
+        remove_identities('foo')  # non-existent identity
         d = dict(list_identities())
         self.assertEqual(set(d), {'ted', 'carol'})
 
@@ -110,6 +116,13 @@ class BasicTest(BaseTest):
             self.addCleanup(os.remove, outpath)
             self.addCleanup(os.remove, sigpath)
             verify(outpath, 'alice', sigpath)
+            # Repeat call using recipient as list
+            outpath, sigpath = encrypt_and_sign(fn, ['bob'], 'alice', armor=armor)
+            # self.assertEqual(outpath, fn + '.age')
+            self.assertEqual(sigpath, outpath + '.sig')
+            self.addCleanup(os.remove, outpath)
+            self.addCleanup(os.remove, sigpath)
+            verify(outpath, 'alice', sigpath)
 
     def test_verifying_and_decrypting_together(self):
         identity = Identity()
@@ -128,6 +141,11 @@ class BasicTest(BaseTest):
             fn = _get_work_file(prefix='test-pagesign-')
             self.addCleanup(os.remove, fn)
             decrypted = verify_and_decrypt(outpath, 'bob', 'alice', fn, sigpath)
+            with open(decrypted, 'rb') as f:
+                ddata = f.read()
+            self.assertEqual(data, ddata)
+            # Repeat call with recipient as list
+            decrypted = verify_and_decrypt(outpath, ['bob'], 'alice', fn, sigpath)
             with open(decrypted, 'rb') as f:
                 ddata = f.read()
             self.assertEqual(data, ddata)

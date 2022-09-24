@@ -562,7 +562,7 @@ def verify_and_decrypt(path, recipients, signer, outpath=None, sigpath=None):
         raise ValueError('At least one recipient (and one signer) needs to be specified.')
     if not os.path.isfile(path):  # pragma: no cover
         raise ValueError('No such file: %s' % path)
-    if sigpath is None:
+    if sigpath is None:  # pragma: no cover
         sigpath = path + '.sig'
     if not os.path.exists(sigpath):  # pragma: no cover
         raise ValueError('no such file: %s' % sigpath)
