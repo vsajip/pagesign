@@ -239,9 +239,9 @@ def main():
     d = os.path.dirname(lfn)
     if not os.path.exists(d):  # pragma: no cover
         os.makedirs(d)
-    if os.path.isdir(os.path.dirname(lfn)):
-        logging.basicConfig(level=logging.DEBUG, filename=lfn, filemode='w',
-                            format='%(message)s')
+    if os.path.isdir(os.path.dirname(lfn)):  # pragma: no branch
+        logging.basicConfig(level=logging.DEBUG, filename=lfn,
+                            filemode='w', format='%(message)s')
     # Is there an existing store?
     from pagesign import PAGESIGN_DIR
     existing = os.path.join(PAGESIGN_DIR, 'keys')
@@ -255,14 +255,12 @@ def main():
     try:
         unittest.main()
     finally:
-        if preserved:
+        if preserved:  # pragma: no branch
             shutil.copy(backup, existing)
-            # with open(existing, 'w', encoding='utf-8') as f:
-                # json.dump(preserved, indent=2, sort_keys=True)
             os.remove(backup)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no branch
     try:
         rc = main()
     except KeyboardInterrupt:  # pragma: no cover
