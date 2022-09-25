@@ -61,7 +61,7 @@ jobs:
         coverage run --branch test_pagesign.py
         coverage xml
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v3
       with:
         flags: unittests
         files: coverage.xml
