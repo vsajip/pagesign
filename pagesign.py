@@ -80,7 +80,8 @@ PUBLIC_ATTRS = ('created', 'crypt_public', 'sign_public', 'sign_id')
 ATTRS = PUBLIC_ATTRS + ('crypt_secret', 'sign_secret', 'sign_pass')
 
 
-def clear_identities(keys=KEYS):
+def clear_identities(keys=None):
+    keys = keys or KEYS
     if len(keys):
         keys.clear()
         _save_keys(keys)
