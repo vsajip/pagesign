@@ -265,6 +265,8 @@ if __name__ == '__main__':  # pragma: no branch
         rc = main()
     except KeyboardInterrupt:  # pragma: no cover
         rc = 2
+    except SystemExit as e:  # pragma: no cover
+        rc = 3 if e.args[0] else 0
     except Exception as e:  # pragma: no cover
         if DEBUGGING:
             s = ' %s:' % type(e).__name__
