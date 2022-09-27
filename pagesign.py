@@ -32,6 +32,8 @@ __all__ = [
     'list_identities',
     'encrypt',
     'decrypt',
+    'encrypt_mem',
+    'decrypt_mem',
     'sign',
     'verify',
     'encrypt_and_sign',
