@@ -380,7 +380,7 @@ The `Identity` class API is here:
 
 
 Exceptions
-----------
+==========
 
 Currently, all operations which fail raise instances of ``CryptException``, which is a
 subclass of ``Exception`` and currently does not add any functionality to it.
