@@ -15,6 +15,8 @@
       * - Date:
         - |today|
 
+.. |--| unicode:: U+2013
+
 .. module:: pagesign
    :synopsis: A Python wrapper for age and minisign
 
@@ -53,8 +55,8 @@ Acknowledgements
 The ``pagesign`` module follows a similar approach to `python-gnupg
 <https://docs.red-dove.com/python-gnupg/>`_ (by the same author), and uses Python's
 ``subprocess`` module to communicate with the `age-keygen`, `age` and `minisign`
-executables, which it uses to spawn subprocesses to do the real work of encryption,
-decryption, signing and verification.
+executables, which it uses to spawn subprocesses to do the real work of key creation,
+encryption, decryption, signing and verification.
 
 Of course this module wouldn't exist without the great work by the `age` and `minisign`
 developers.
@@ -149,7 +151,7 @@ A remote identity consists of:
   format.
 * A public key (from `age`) for encrypting files.
 * A public key (from `minisign`) for verifying file signatures.
-* A signature ID (from `minisign`) - this is not currently used.
+* A signature ID (from `minisign`) |--| this is not currently used.
 
 A local identity, in addition to the above, contains:
 
@@ -160,7 +162,7 @@ A local identity, in addition to the above, contains:
 
 These are stored in attributes of an :class:`Identity` instance named `created`,
 `crypt_public`, `sign_public`, `sign_id`, `crypt_secret`, `sign_secret` and
-`sign_pass`. Creation of a local identity generates four keys - two secret and two
+`sign_pass`. Creation of a local identity generates four keys |--| two secret and two
 public, two for encryption/decryption and two for signing/verification. The following
 table illustrates what they're for.
 
@@ -200,7 +202,7 @@ To create a new local identity, you simply call
     identity = Identity()
 
 Once you've called this, the identity is in memory, but not saved anywhere. To save it,
-you call its `save()` method with a name - just a string you choose. It could be a
+you call its `save()` method with a name |--| just a string you choose. It could be a
 simple identifier like `alice` or `bob`, or an email address.
 
 .. code-block:: python
@@ -236,12 +238,12 @@ generated *only* on a local machine (i.e. not one being accessed across a networ
 and that keyboard, mouse and disk activity be maximised during key generation to
 increase the entropy of the system.
 
-Unfortunately, there are some scenarios - for example, on virtual machines which don't
-have real hardware - where insufficient entropy can cause key generation to be slow.
-If you come across this problem, you should investigate means of increasing the system
-entropy. On virtualised Linux systems, this can often be achieved by installing the
-``rng-tools`` package. This is available at least on RPM-based and APT-based systems
-(Red Hat/Fedora, Debian, Ubuntu and derivative distributions).
+Unfortunately, there are some scenarios |--| for example, on virtual machines which
+don't have real hardware - where insufficient entropy can cause key generation to be
+slow. If you come across this problem, you should investigate means of increasing the
+system entropy. On virtualised Linux systems, this can often be achieved by installing
+the ``rng-tools`` package. This is available at least on RPM-based and APT-based
+systems (Red Hat/Fedora, Debian, Ubuntu and derivative distributions).
 
 
 .. index:: Key; exporting
@@ -424,7 +426,7 @@ To decrypt a message, use the `decrypt` function:
 .. function:: decrypt(path: str, identities: Union[str, list[str]], outpath: Optional[str] = None) -> str
 
    Decrypt a file at `path` to `outpath`. If `outpath` isn't specified, then if `path`
-   ends with `.age`, it is stripped to compute `outpath` - otherwise it has `'.dec'`
+   ends with `.age`, it is stripped to compute `outpath` |--| otherwise it has `'.dec'`
    appended to determine `outpath`. The `identities` can be a single identity name or
    a list or tuple of identity names.
 
@@ -579,7 +581,8 @@ paper <https://archive.ph/VFWcb#Repair>`_ involve combining data with identities
 during signing and encryption.
 
 The current implementation of :func:`encrypt_and_sign` uses a sign/encrypt/sign
-strategy, which involves the following steps.
+strategy (`Section 5.2 of Davis'
+paper <https://archive.ph/VFWcb#SES>`_), which involves the following steps.
 
 1. Sign the plaintext.
 2. Construct a JSON of the base64-encoded plaintext and signature.
@@ -615,7 +618,7 @@ Key distribution
 ================
 
 The question of key distribution in a trustworthy way is currently out of scope for
-`pagesign` - you are expected to get exported keys securely to people you need to
+`pagesign` |--| you are expected to get exported keys securely to people you need to
 exchange data with, and they are expected to get their public keys to you securely.
 
 .. index:: Logging

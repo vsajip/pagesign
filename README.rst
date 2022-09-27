@@ -64,6 +64,20 @@ https://docs.red-dove.com/pagesign/
 Change log
 ==========
 
+0.1.1
+-----
+
+Released: Not yet.
+
+* Add the ``CryptException`` class and code to raise it when an operation fails.
+
+* Make a change so that ``clear_identities()`` now takes no arguments.
+
+* Add ``encrypt_mem()`` and ``decrypt_mem()`` functions to perform operations in
+  memory.
+
+* Use a better algorithm for encryption and signing at the same time.
+
 0.1.0
 -----
 
