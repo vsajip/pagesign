@@ -23,7 +23,8 @@
 
 
 The ``pagesign`` (for 'Python-age-sign') module allows Python programs to make use of
-the functionality provided by `age <https://age-encryption.org/>`_ and `minisign
+the functionality provided by the modern cryptography tools `age
+<https://age-encryption.org/>`_ and `minisign
 <https://jedisct1.github.io/minisign/>`_. Using this module, Python programs can
 encrypt and decrypt data, digitally sign documents and verify digital signatures,
 manage (generate, list and delete) encryption and signing keys.
@@ -568,6 +569,42 @@ relatively easy means of combining them, the actual data to be encrypted and sig
 needs to be constructed with care. The solutions proposed in `Section 5 of Davis'
 paper <https://archive.ph/VFWcb#Repair>`_ involve combining data with identities
 during signing and encryption.
+
+The current implementation of :func:`encrypt_and_sign` uses a sign/encrypt/sign
+strategy, which involves the following steps.
+
+1. Sign the plaintext.
+2. Construct a JSON of the base64-encoded plaintext and signature.
+3. Encrypt that.
+4. Hash all the recipient public keys into a list.
+5. Construct a JSON of the encrypted data and recipient hashes.
+6. Sign that.
+
+The output from a :func:`encrypt_and_sign` might look something like this:
+
+.. code-block:: text
+
+    {
+      "encrypted": "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0 ... z1LMsTB83iIVZYPzEgUomGx0Q",
+      "armored": false,
+      "recipients": [
+        "0e6f8764a139c9a8fd90c3ee4a40c69d0c2a638756485911ad9660a593410442"
+      ]
+    }
+
+In the above, the opaque ``encrypted`` value will be the result of encrypting a JSON
+which looks like
+
+.. code-block:: text
+
+    {
+      "plaintext": <base-64 encoded plaintext>
+      "signature": <base-64 encoded signature from the first step above>
+    }
+
+
+Key distribution
+================
 
 The question of key distribution in a trustworthy way is currently out of scope for
 `pagesign` - you are expected to get exported keys securely to people you need to
