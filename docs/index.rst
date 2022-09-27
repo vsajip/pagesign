@@ -378,6 +378,14 @@ The `Identity` class API is here:
       dictionary `public_data`. The instance isn't saved in your keystore until you
       call its :meth:`save` method with a name of your choice.
 
+
+Exceptions
+----------
+
+Currently, all operations which fail raise instances of ``CryptException``, which is a
+subclass of ``Exception`` and currently does not add any functionality to it.
+
+
 Encryption and Decryption
 =========================
 

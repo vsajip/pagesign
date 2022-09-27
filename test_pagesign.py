@@ -11,8 +11,8 @@ import sys
 import tempfile
 import unittest
 
-from pagesign import (Identity, encrypt, encrypt_mem, decrypt, decrypt_mem,
-                      sign, verify, encrypt_and_sign, verify_and_decrypt,
+from pagesign import (Identity, CryptException, encrypt, encrypt_mem, decrypt,
+                      decrypt_mem, sign, verify, encrypt_and_sign, verify_and_decrypt,
                       remove_identities, clear_identities, list_identities,
                       _get_work_file)
 
@@ -75,10 +75,10 @@ class BasicTest(BaseTest):
         self.assertEqual(exported, imported.export())
 
     def test_encryption_and_signing_separately(self):
-        identity = Identity()
-        identity.save('alice')
-        identity = Identity()
-        identity.save('bob')
+        for name in ('alice', 'bob'):
+            identity = Identity()
+            identity.save(name)
+
         for armor in (False, True):
             fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
             self.addCleanup(os.remove, fn)
@@ -100,10 +100,10 @@ class BasicTest(BaseTest):
             self.assertEqual(data, ddata)
 
     def test_encryption_and_signing_together(self):
-        identity = Identity()
-        identity.save('alice')
-        identity = Identity()
-        identity.save('bob')
+        for name in ('alice', 'bob'):
+            identity = Identity()
+            identity.save(name)
+
         for armor in (False, True):
             fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
             self.addCleanup(os.remove, fn)
@@ -125,10 +125,10 @@ class BasicTest(BaseTest):
             verify(outpath, 'alice', sigpath)
 
     def test_verifying_and_decrypting_together(self):
-        identity = Identity()
-        identity.save('alice')
-        identity = Identity()
-        identity.save('bob')
+        for name in ('alice', 'bob'):
+            identity = Identity()
+            identity.save(name)
+
         for armor in (False, True):
             fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
             self.addCleanup(os.remove, fn)
@@ -152,21 +152,34 @@ class BasicTest(BaseTest):
             os.remove(decrypted)
 
     def test_encryption_in_memory(self):
-        identity = Identity()
-        identity.save('alice')
-        identity = Identity()
-        identity.save('bob')
+        for name in ('alice', 'bob'):
+            identity = Identity()
+            identity.save(name)
+
         data = 'Hello, world!'
         for armor in (False, True):
             encrypted = encrypt_mem(data, 'bob', armor=armor)
             decrypted = decrypt_mem(encrypted, 'bob')
             self.assertEqual(decrypted, data.encode('utf-8'))
 
+    def test_multiple_recipients(self):
+        for name in ('alice', 'bob', 'carol', 'ted'):
+            identity = Identity()
+            identity.save(name)
+        data = b'Hello, world!'
+        recipients = ['alice', 'carol', 'ted']
+        encrypted = encrypt_mem(data, recipients)
+        for name in recipients:
+            ddata = decrypt_mem(encrypted, name)
+            self.assertEqual(data, ddata)
+        with self.assertRaises(CryptException) as ec:
+            ddata = decrypt_mem(encrypted, 'bob')
+
     def test_default_paths(self):
-        identity = Identity()
-        identity.save('alice')
-        identity = Identity()
-        identity.save('bob')
+        for name in ('alice', 'bob'):
+            identity = Identity()
+            identity.save(name)
+
         fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
         self.addCleanup(os.remove, fn)
         data = b'Hello, world!'

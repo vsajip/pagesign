@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     'Identity',
+    'CryptException',
     'remove_identities',
     'clear_identities',
     'list_identities',
@@ -43,6 +44,9 @@ __all__ = [
     'encrypt_and_sign',
     'verify_and_decrypt'
 ]
+
+class CryptException(Exception):
+    pass
 
 if os.name == 'nt':
     PAGESIGN_DIR = os.path.join(os.environ['LOCALAPPDATA'], 'pagesign')
@@ -252,6 +256,8 @@ class Identity:
                 with open(sfn, encoding=self.encoding) as f:
                     self.sign_secret = f.read()
                 _shred(sfn, False)  # the whole directory will get removed
+            except subprocess.CalledProcessError as e:
+                raise CryptException('Identity creation failed') from e
             finally:
                 shutil.rmtree(wd)
 
@@ -374,9 +380,11 @@ def encrypt(path, recipients, outpath=None, armor=False):
     cmd = _get_encryption_command(recipients, armor)
     cmd.extend(['-o', outpath])
     cmd.append(path)
-    _run_command(cmd, os.getcwd())
-    return outpath
-
+    try:
+        _run_command(cmd, os.getcwd())
+        return outpath
+    except subprocess.CalledProcessError as e:
+        raise CryptException('Encryption failed') from e
 
 def _data_writer(data, stream, stdin, result):
     stdin.write(data)
@@ -396,8 +404,11 @@ def encrypt_mem(data, recipients, armor=False):
     if not isinstance(data, bytes):  # pragma: no cover
         raise TypeError('invalid data: %s' % data)
     err_reader = functools.partial(_data_writer, data)
-    stdout, stderr = _run_command(cmd, os.getcwd(), err_reader, False)
-    return stdout
+    try:
+        stdout, stderr = _run_command(cmd, os.getcwd(), err_reader, False)
+        return stdout
+    except subprocess.CalledProcessError as e:
+        raise CryptException('Encryption failed') from e
 
 
 def _get_decryption_command(identities):
@@ -449,6 +460,8 @@ def decrypt(path, identities, outpath=None):
         cmd.append(path)
         _run_command(cmd, os.getcwd())
         return outpath
+    except subprocess.CalledProcessError as e:
+        raise CryptException('Decryption failed') from e
     finally:
         _shred(fn)
 
@@ -467,6 +480,8 @@ def decrypt_mem(data, identities):
     try:
         stdout, stderr = _run_command(cmd, os.getcwd(), err_reader, False)
         return stdout
+    except subprocess.CalledProcessError as e:
+        raise CryptException('Decryption failed') from e
     finally:
         _shred(fn)
 
@@ -499,6 +514,8 @@ def sign(path, identity, outpath=None):
     try:
         cmd = ['minisign', '-S', '-x', outpath, '-s', fn, '-m', path]
         _run_command(cmd, os.getcwd(), ident._read_minisign_sign_err)
+    except subprocess.CalledProcessError as e:
+        raise CryptException('Signing failed') from e
     finally:
         _shred(fn)
     return outpath
@@ -524,7 +541,10 @@ def verify(path, identity, sigpath=None):
         raise ValueError('No such file: %s' % sigpath)
     cmd = ['minisign', '-V', '-x', sigpath, '-P', ident.sign_public, '-m', path]
     # import pdb; pdb.set_trace()
-    _run_command(cmd, os.getcwd())
+    try:
+        _run_command(cmd, os.getcwd())
+    except subprocess.CalledProcessError as e:
+        raise CryptException('Verification failed') from e
 
 
 def _get_b64(path):
