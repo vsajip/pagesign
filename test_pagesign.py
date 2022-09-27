@@ -215,22 +215,6 @@ class BasicTest(BaseTest):
         self.assertEqual(data, ddata)
         os.remove(decrypted)
 
-    # def ztest_encryption_passphrase(self):
-        # fd, fn = tempfile.mkstemp(prefix='test-pagesign-')
-        # self.addCleanup(os.remove, fn)
-        # data = b'Hello, world!'
-        # os.write(fd, data)
-        # os.close(fd)
-        # passphrase = 'correct-horse-battery-staple'
-        # encrypted = encrypt(fn, passphrase=passphrase)
-        # self.addCleanup(os.remove, encrypted)
-        # fn = _get_work_file(prefix='test-pagesign-')
-        # self.addCleanup(os.remove, fn)
-        # decrypted = decrypt(encrypted, outpath=fn, passphrase=passphrase)
-        # with open(decrypted, 'rb') as f:
-            # ddata = f.read()
-        # self.assertEqual(data, ddata)
-
 
 def main():
     fn = os.path.basename(__file__)

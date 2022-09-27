@@ -126,43 +126,6 @@ def _read_out(stream, result, key='stdout'):
     result[key] = data
 
 
-# def _read_age_encrypt_err(passphrase, stream, stdin, result):
-    # data = b''
-    # pwd = (passphrase + os.linesep).encode('ascii')
-    # pwd_written = 0
-    # sep = os.linesep.encode('ascii')
-    # prompt1 = b'Enter passphrase (leave empty to autogenerate a secure one): '
-    # prompt2 = prompt1 + sep + b'Confirm passphrase: '
-    # prompts = (prompt1, prompt2)
-    # while True:
-        # c = stream.read1(100)
-        # data += c
-        # # print('err: %s' % data)
-        # if data in prompts:
-            # stdin.write(pwd)
-            # stdin.flush()
-            # pwd_written += 1
-            # if pwd_written == 2:
-                # stdin.close()
-                # break
-    # result['stderr'] = data
-
-
-# def _read_age_decrypt_err(passphrase, stream, stdin, result):
-    # data = b''
-    # pwd = (passphrase + os.linesep).encode('ascii')
-    # while True:
-        # c = stream.read1(100)
-        # data += c
-        # # print('err: %s' % data)
-        # if data == b'Enter passphrase: ':
-            # stdin.write(pwd)
-            # stdin.flush()
-            # stdin.close()
-            # break
-    # result['stderr'] = data
-
-
 def _run_command(cmd, wd, err_reader=None, decode=True):
     # print('Running: %s' % (cmd if isinstance(cmd, str) else ' '.join(cmd)))
     # if cmd[0] == 'age': import pdb; pdb.set_trace()
@@ -638,6 +601,9 @@ def verify_and_decrypt(path, recipients, signer, outpath=None, sigpath=None):
     ``'.age'``) or with ``'.dec'`` appended.
 
     The function returns *outpath*.
+
+    Note that the file inputs to this function should have been created using
+    :func:`encrypt_and_sign`.
     """
     if not signer or not recipients:  # pragma: no cover
         raise ValueError('At least one recipient (and one signer) needs to be specified.')
