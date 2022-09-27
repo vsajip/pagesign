@@ -80,14 +80,20 @@ PUBLIC_ATTRS = ('created', 'crypt_public', 'sign_public', 'sign_id')
 ATTRS = PUBLIC_ATTRS + ('crypt_secret', 'sign_secret', 'sign_pass')
 
 
-def clear_identities(keys=None):
-    keys = keys or KEYS
-    if len(keys):
-        keys.clear()
-        _save_keys(keys)
+def clear_identities():
+    """
+    Clear all identities saved locally.
+    """
+    if len(KEYS):
+        KEYS.clear()
+        _save_keys(KEYS)
 
 
 def remove_identities(*args):
+    """
+    Remove the identities stored locally whose names are in *args*. Names are
+    case-sensitive.
+    """
     changed = False
     for name in args:
         if name in KEYS:
@@ -98,6 +104,9 @@ def remove_identities(*args):
 
 
 def list_identities():
+    """
+    Return an iterator over the locally stored identities, as name-value 2-tuples.
+    """
     return KEYS.items()
 
 
@@ -218,10 +227,19 @@ def _shred(path, delete=True):
 
 
 class Identity:
-
+    """
+    This class represents both remote identities (used for encryption and verification
+    only) and local identities (used for all functions - encryption, decryption,
+    signing and verification).
+    """
     encoding = 'utf-8'
 
     def __init__(self, name=None):
+        """
+        Either retrieve an existing identity named *name*, or, if not specified, create
+        a new local identity which can later be named using its :meth:`save` method.
+        Names are case-sensitive.
+        """
         if name:
             if name in KEYS:
                 self.__dict__.update(KEYS[name])
@@ -272,6 +290,12 @@ class Identity:
                 assert hasattr(self, attr)
 
     def save(self, name):
+        """
+        Save this instance with the specified *name*, which cannot be blank or
+        ``None``. Names are case-sensitive.
+        """
+        if not name or not isinstance(name, str):
+            raise ValueError('Invalid name: %r' % name)
         d = dict(self.__dict__)
         # might need to remove some attrs from d here ...
         KEYS[name] = d
@@ -313,6 +337,10 @@ class Identity:
         result['stderr'] = data
 
     def export(self):
+        """
+        Export this instance. Only public attributes are preserved in the export - it
+        is meant for sending to someone securely.
+        """
         d = dict(self.__dict__)
         for k in self.__dict__:
             if '_secret' in k or '_pass' in k:
@@ -321,6 +349,12 @@ class Identity:
 
     @classmethod
     def imported(cls, d, name):
+        """
+        Return a remote identity instance created from *d* and with local name *name*.
+        The dictionary must contain the public attributes *created', *crypt_public*,
+        *sign_public* and *sign_id* (which will be present in dictionaries created
+        using the :meth:`export` method). Names are case-sensitive.
+        """
         result = object.__new__(cls)
         for k in PUBLIC_ATTRS:
             try:
@@ -350,6 +384,12 @@ def _get_encryption_command(recipients, armor):
 
 
 def encrypt(path, recipients, outpath=None, armor=False):
+    """
+    Encrypt the file at *path* for identities whose names are in *recipients* and
+    save the encrypted data in *outpath*. The output data is ASCII-armored if *armor*
+    is true, else it is binary. If *outpath* isn't specified, it will be set to *path*
+    with ``'.age'`` appended.
+    """
     if not os.path.isfile(path):  # pragma: no cover
         raise ValueError('No such file: %s' % path)
     if outpath is None:
@@ -376,6 +416,11 @@ def _data_writer(data, stream, stdin, result):
 
 
 def encrypt_mem(data, recipients, armor=False):
+    """
+    Encrypt the in-memory *data* for identities whose names are in *recipients*. The
+    output data is ASCII-armored if *armor* is true, else it is binary. The encrypted
+    data is returned as bytes.
+    """
     cmd = _get_encryption_command(recipients, armor)
     if isinstance(data, str):
         data = data.encode('utf-8')
@@ -407,6 +452,12 @@ def _get_decryption_command(identities):
 
 
 def decrypt(path, identities, outpath=None):
+    """
+    Decrypt the data at *path* which is intended for recipients named in *identities*
+    and save the decrypted data at *outpath*. If *outpath* is not specified and *path*
+    ends with ``'.age'``, then *outpath* will be set to path* with that suffix
+    stripped. Otherwise, it will be set to *path* with ``'.dec'`` appended.
+    """
     if not os.path.isfile(path):  # pragma: no cover
         raise ValueError('No such file: %s' % path)
     if outpath is None:
@@ -434,6 +485,10 @@ def decrypt(path, identities, outpath=None):
 
 
 def decrypt_mem(data, identities):
+    """
+    Decrypt the in-memory *data* for recipients whose names are in *identities*. The
+    decrypted data is returned as bytes.
+    """
     cmd, fn = _get_decryption_command(identities)
     if isinstance(data, str):  # pragma: no cover
         data = data.encode('utf-8')
@@ -448,6 +503,10 @@ def decrypt_mem(data, identities):
 
 
 def sign(path, identity, outpath=None):
+    """
+    Sign the data at *path* with the named *identity* and save the signature in
+    *outpath*. If not specified, *outpath* is set to *path* with ``'.sig'`` appended.
+    """
     if not identity:  # pragma: no cover
         raise ValueError('An identity needs to be specified.')
     if identity not in KEYS:  # pragma: no cover
@@ -477,6 +536,12 @@ def sign(path, identity, outpath=None):
 
 
 def verify(path, identity, sigpath=None):
+    """
+    Verify that the data at *path* was signed with the identity named *identity", where
+    the signature is at *sigpath*. If not specified, *sigpath* is set to *path* with
+    ``'.sig'`` appended. If verification fails, an exception is raised, otherwise this
+    function returns ``None``.
+    """
     if not identity:  # pragma: no cover
         raise ValueError('An identity needs to be specified.')
     if identity not in KEYS:  # pragma: no cover
@@ -499,6 +564,18 @@ def _get_b64(path):
 
 
 def encrypt_and_sign(path, recipients, signer, armor=False, outpath=None, sigpath=None):
+    """
+    Encrypt the data at *path* for identities named in *recipients* and sign it with
+    the identity named by *signer*. If *armor* is true, use ASCII armor for the
+    encrypted data, else save it as binary. Write the encrypted data to *outpath* and
+    the signature to *sigpath*. If *outpath* isn't specified, it will be set to *path*
+    with ``'.age'`` appended. If not specified, *sigpath* is set to *outpath* with
+    ``'.sig'`` appended.
+
+    A tuple of *outpath* and *sigpath* is returned.
+
+    Note that you'll need to call :func:`verify_and_decrypt` to reverse this process.
+    """
     if not recipients or not signer:  # pragma: no cover
         raise ValueError('At least one recipient (and one signer) needs to be specified.')
     if not os.path.isfile(path):  # pragma: no cover
@@ -549,6 +626,17 @@ def encrypt_and_sign(path, recipients, signer, armor=False, outpath=None, sigpat
 
 
 def verify_and_decrypt(path, recipients, signer, outpath=None, sigpath=None):
+    """
+    Verify the encrypted and signed data at *path* as having been signed by the
+    identity named by *signer* and intended for identities named in *recipients*.
+    The signature for *path* is in *sigpath*. If not specified, it will be set to
+    *path* with ``'.sig'`` appended. If verification or decryption fails, an exceptio
+    will be raised. Otherwise, the decrypted data will be stored at *outpath*. If
+    not specified, it will be set to *path* with the suffix stripped (if it ends in
+    ``'.age'``) or with ``'.dec'`` appended.
+
+    The function returns *outpath*.
+    """
     if not signer or not recipients:  # pragma: no cover
         raise ValueError('At least one recipient (and one signer) needs to be specified.')
     if not os.path.isfile(path):  # pragma: no cover
