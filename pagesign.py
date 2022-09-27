@@ -2,6 +2,10 @@
 #
 # Copyright (C) 2021-2022 Red Dove Consultants Limited
 #
+"""
+This module supports key management, encryption/decryption and signing/verification
+using age and minisign.
+"""
 import base64
 import functools
 import hashlib
