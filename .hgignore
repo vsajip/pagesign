@@ -1,4 +1,4 @@
-\.(pyc|pyo|log)
+\.(pyc|pyo|log|coverage)
 __pycache__/
-(build|dist|.*egg-info)/
+(build|dist|.*egg-info|htmlcov)/
 ^MANIFEST$
