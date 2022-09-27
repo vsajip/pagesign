@@ -98,6 +98,9 @@ class BasicTest(BaseTest):
             with open(decrypted, 'rb') as f:
                 ddata = f.read()
             self.assertEqual(data, ddata)
+            with self.assertRaises(CryptException) as ec:
+                verify(encrypted, 'bob', signed)
+            self.assertEqual(str(ec.exception), 'Verification failed')
 
     def test_encryption_and_signing_together(self):
         for name in ('alice', 'bob'):
@@ -174,6 +177,7 @@ class BasicTest(BaseTest):
             self.assertEqual(data, ddata)
         with self.assertRaises(CryptException) as ec:
             ddata = decrypt_mem(encrypted, 'bob')
+        self.assertEqual(str(ec.exception), 'Decryption failed')
 
     def test_default_paths(self):
         for name in ('alice', 'bob'):
