@@ -216,44 +216,62 @@ class Identity:
             try:
                 p = os.path.join(wd, 'age-key')
                 cmd = 'age-keygen -o %s' % p
-                _run_command(cmd, wd)
-                with open(p, encoding=self.encoding) as f:
-                    lines = f.read().splitlines()
-                for line in lines:
-                    m = CREATED_PATTERN.match(line)
-                    if m:
-                        self.created = m.groups()[0]
-                        continue
-                    m = APK_PATTERN.match(line)
-                    if m:
-                        self.crypt_public = m.groups()[0]
-                        continue
-                    m = ASK_PATTERN.match(line)
-                    assert m, 'Secret key line not seen'
-                    self.crypt_secret = line
-                _shred(p, False)  # the whole directory will get removed
+                try:
+                    _run_command(cmd, wd)
+                    self._parse_age_file(p)
+                except subprocess.CalledProcessError as e:  # pragma: no cover
+                    raise CryptException(
+                        'Identity creation failed (crypt)') from e
+                finally:
+                    # the whole working directory will get removed, so pass False
+                    # to _shred as we don't need to delete the file now
+                    # (same logic applies to _shred calls below)
+                    _shred(p, False)
                 sfn = _get_work_file(prefix='msk-', dir=wd)
                 pfn = _get_work_file(prefix='mpk-', dir=wd)
                 self.sign_pass = _make_password(12)
                 cmd = 'minisign -fG -p %s -s %s' % (pfn, sfn)
-                _run_command(cmd, wd, self._read_minisign_gen_err)
-                with open(pfn, encoding=self.encoding) as f:
-                    lines = f.read().splitlines()
-                    for line in lines:
-                        m = MPI_PATTERN.search(line)
-                        if m:
-                            self.sign_id = m.groups()[0]
-                        else:
-                            self.sign_public = line
-                self.sign_secret = Path(sfn).read_text(self.encoding)
-                _shred(sfn, False)  # the whole directory will get removed
-            except subprocess.CalledProcessError as e:  # pragma: no cover
-                raise CryptException('Identity creation failed') from e
+                try:
+                    _run_command(cmd, wd, self._read_minisign_gen_err)
+                    self._parse_minisign_file(pfn)
+                    self.sign_secret = Path(sfn).read_text(self.encoding)
+                except subprocess.CalledProcessError as e:  # pragma: no cover
+                    raise CryptException(
+                        'Identity creation failed (sign)') from e
+                finally:
+                    _shred(pfn, False)
+                    _shred(sfn, False)
             finally:
                 shutil.rmtree(wd)
 
             for attr in ATTRS:
                 assert hasattr(self, attr)
+
+    def _parse_age_file(self, fn):
+        with open(fn, encoding=self.encoding) as f:
+            lines = f.read().splitlines()
+        for line in lines:
+            m = CREATED_PATTERN.match(line)
+            if m:
+                self.created = m.groups()[0]
+                continue
+            m = APK_PATTERN.match(line)
+            if m:
+                self.crypt_public = m.groups()[0]
+                continue
+            m = ASK_PATTERN.match(line)
+            assert m, 'Secret key line not seen'
+            self.crypt_secret = line
+
+    def _parse_minisign_file(self, fn):
+        with open(fn, encoding=self.encoding) as f:
+            lines = f.read().splitlines()
+        for line in lines:
+            m = MPI_PATTERN.search(line)
+            if m:
+                self.sign_id = m.groups()[0]
+            else:
+                self.sign_public = line
 
     def save(self, name):
         """
