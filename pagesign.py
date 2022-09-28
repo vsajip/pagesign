@@ -372,7 +372,7 @@ def encrypt(path, recipients, outpath=None, armor=False):
     cmd.extend(['-o', outpath])
     cmd.append(path)
     try:
-        _run_command(cmd, Path.cwd())
+        _run_command(cmd, os.getcwd())
         return outpath
     except subprocess.CalledProcessError as e:  # pragma: no cover
         raise CryptException('Encryption failed') from e
@@ -397,7 +397,7 @@ def encrypt_mem(data, recipients, armor=False):
         raise TypeError('invalid data: %s' % data)
     err_reader = functools.partial(_data_writer, data)
     try:
-        stdout, stderr = _run_command(cmd, Path.cwd(), err_reader, False)
+        stdout, stderr = _run_command(cmd, os.getcwd(), err_reader, False)
         return stdout
     except subprocess.CalledProcessError as e:  # pragma: no cover
         raise CryptException('Encryption failed') from e
@@ -450,7 +450,7 @@ def decrypt(path, identities, outpath=None):
     try:
         cmd.extend(['-o', outpath])
         cmd.append(path)
-        _run_command(cmd, Path.cwd())
+        _run_command(cmd, os.getcwd())
         return outpath
     except subprocess.CalledProcessError as e:  # pragma: no cover
         raise CryptException('Decryption failed') from e
@@ -470,7 +470,7 @@ def decrypt_mem(data, identities):
         raise TypeError('invalid data: %s' % data)
     err_reader = functools.partial(_data_writer, data)
     try:
-        stdout, stderr = _run_command(cmd, Path.cwd(), err_reader, False)
+        stdout, stderr = _run_command(cmd, os.getcwd(), err_reader, False)
         return stdout
     except subprocess.CalledProcessError as e:  # pragma: no cover
         raise CryptException('Decryption failed') from e
@@ -505,7 +505,7 @@ def sign(path, identity, outpath=None):
     os.close(fd)
     try:
         cmd = ['minisign', '-S', '-x', outpath, '-s', fn, '-m', path]
-        _run_command(cmd, Path.cwd(), ident._read_minisign_sign_err)
+        _run_command(cmd, os.getcwd(), ident._read_minisign_sign_err)
     except subprocess.CalledProcessError as e:  # pragma: no cover
         raise CryptException('Signing failed') from e
     finally:
@@ -536,7 +536,7 @@ def verify(path, identity, sigpath=None):
     ]
     # import pdb; pdb.set_trace()
     try:
-        _run_command(cmd, Path.cwd())
+        _run_command(cmd, os.getcwd())
     except subprocess.CalledProcessError as e:  # pragma: no cover
         raise CryptException('Verification failed') from e
 
