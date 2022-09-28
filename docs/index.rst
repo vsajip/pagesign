@@ -28,8 +28,8 @@ The ``pagesign`` (for 'Python-age-sign') module allows Python programs to make u
 the functionality provided by the modern cryptography tools `age
 <https://age-encryption.org/>`_ and `minisign
 <https://jedisct1.github.io/minisign/>`_. Using this module, Python programs can
-encrypt and decrypt data, digitally sign documents and verify digital signatures,
-manage (generate, list and delete) encryption and signing keys.
+encrypt and decrypt data, digitally sign documents, verify digital signatures,
+and manage (generate, list and delete) encryption and signing keys.
 
 This module is expected to be used with Python versions >= 3.6. Install this module
 using ``pip install pagesign``. You can then use this module in your own code by
@@ -400,7 +400,7 @@ corresponding secret key. A recipient is denoted by a local or remote identity.
 Encryption
 ----------
 
-To encrypt a message, use the `encrypt` function:
+To encrypt data, use the `encrypt` function:
 
 .. function:: encrypt(path: str, recipients: Union[str, list[str]], outpath: Optional[str] = None, armor: bool = False) -> str
 
@@ -421,7 +421,7 @@ To encrypt a message, use the `encrypt` function:
 Decryption
 ----------
 
-To decrypt a message, use the `decrypt` function:
+To decrypt data, use the `decrypt` function:
 
 .. function:: decrypt(path: str, identities: Union[str, list[str]], outpath: Optional[str] = None) -> str
 
@@ -468,16 +468,16 @@ recipient can verify the signed data using the corresponding public key.
 Signatures are always stored 'detached', i.e. in separate files from what they are
 signing.
 
-Note that although encryption and decryption can be performed in memory, there is no
-analoguous in-memory API for signing and verification, because `minisign` only signs
-and verifies signature files against source files and identities.
+.. note:: Although encryption and decryption can be performed in memory, there is no
+   analoguous in-memory API for signing and verification, because `minisign` only signs
+   and verifies signature files against source files and identities.
 
 .. index:: Signing
 
 Signing
 -------
 
-To sign a message, use the `sign()` function:
+To sign some data, use the `sign()` function:
 
 .. function:: sign(path: str, identity: str, outpath: Optional[str] = None) -> str
 
