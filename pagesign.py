@@ -12,6 +12,7 @@ import hashlib
 import json
 import logging
 import os
+from pathlib import Path
 import re
 import shutil
 # import stat
@@ -30,23 +31,15 @@ if sys.version_info[:2] < (3, 6):  # pragma: no cover
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    'Identity',
-    'CryptException',
-    'remove_identities',
-    'clear_identities',
-    'list_identities',
-    'encrypt',
-    'decrypt',
-    'encrypt_mem',
-    'decrypt_mem',
-    'sign',
-    'verify',
-    'encrypt_and_sign',
-    'verify_and_decrypt'
+    'Identity', 'CryptException', 'remove_identities', 'clear_identities',
+    'list_identities', 'encrypt', 'decrypt', 'encrypt_mem', 'decrypt_mem',
+    'sign', 'verify', 'encrypt_and_sign', 'verify_and_decrypt'
 ]
+
 
 class CryptException(Exception):
     pass
+
 
 if os.name == 'nt':
     PAGESIGN_DIR = os.path.join(os.environ['LOCALAPPDATA'], 'pagesign')
@@ -140,11 +133,7 @@ def _run_command(cmd, wd, err_reader=None, decode=True):
     if not isinstance(cmd, list):
         cmd = cmd.split()
     logger.debug('Running: %s' % cmd)
-    kwargs = {
-        'cwd': wd,
-        'stdout': subprocess.PIPE,
-        'stderr': subprocess.PIPE
-    }
+    kwargs = {'cwd': wd, 'stdout': subprocess.PIPE, 'stderr': subprocess.PIPE}
     if err_reader:
         kwargs['stdin'] = subprocess.PIPE
     p = subprocess.Popen(cmd, **kwargs)
@@ -156,7 +145,8 @@ def _run_command(cmd, wd, err_reader=None, decode=True):
         rout.daemon = True
         rout.start()
 
-        rerr = threading.Thread(target=err_reader, args=(p.stderr, p.stdin, data))
+        rerr = threading.Thread(target=err_reader,
+                                args=(p.stderr, p.stdin, data))
         rerr.daemon = True
         rerr.start()
 
@@ -177,8 +167,10 @@ def _run_command(cmd, wd, err_reader=None, decode=True):
             stderr = stderr.decode('utf-8')
         return stdout, stderr
     else:  # pragma: no cover
-        raise subprocess.CalledProcessError(p.returncode, p.args,
-                                            output=stdout, stderr=stderr)
+        raise subprocess.CalledProcessError(p.returncode,
+                                            p.args,
+                                            output=stdout,
+                                            stderr=stderr)
 
 
 def _get_work_file(**kwargs):
@@ -253,8 +245,7 @@ class Identity:
                             self.sign_id = m.groups()[0]
                         else:
                             self.sign_public = line
-                with open(sfn, encoding=self.encoding) as f:
-                    self.sign_secret = f.read()
+                self.sign_secret = Path(sfn).read_text(self.encoding)
                 _shred(sfn, False)  # the whole directory will get removed
             except subprocess.CalledProcessError as e:  # pragma: no cover
                 raise CryptException('Identity creation failed') from e
@@ -381,10 +372,11 @@ def encrypt(path, recipients, outpath=None, armor=False):
     cmd.extend(['-o', outpath])
     cmd.append(path)
     try:
-        _run_command(cmd, os.getcwd())
+        _run_command(cmd, Path.cwd())
         return outpath
     except subprocess.CalledProcessError as e:  # pragma: no cover
         raise CryptException('Encryption failed') from e
+
 
 def _data_writer(data, stream, stdin, result):
     stdin.write(data)
@@ -405,7 +397,7 @@ def encrypt_mem(data, recipients, armor=False):
         raise TypeError('invalid data: %s' % data)
     err_reader = functools.partial(_data_writer, data)
     try:
-        stdout, stderr = _run_command(cmd, os.getcwd(), err_reader, False)
+        stdout, stderr = _run_command(cmd, Path.cwd(), err_reader, False)
         return stdout
     except subprocess.CalledProcessError as e:  # pragma: no cover
         raise CryptException('Encryption failed') from e
@@ -458,7 +450,7 @@ def decrypt(path, identities, outpath=None):
     try:
         cmd.extend(['-o', outpath])
         cmd.append(path)
-        _run_command(cmd, os.getcwd())
+        _run_command(cmd, Path.cwd())
         return outpath
     except subprocess.CalledProcessError as e:  # pragma: no cover
         raise CryptException('Decryption failed') from e
@@ -478,7 +470,7 @@ def decrypt_mem(data, identities):
         raise TypeError('invalid data: %s' % data)
     err_reader = functools.partial(_data_writer, data)
     try:
-        stdout, stderr = _run_command(cmd, os.getcwd(), err_reader, False)
+        stdout, stderr = _run_command(cmd, Path.cwd(), err_reader, False)
         return stdout
     except subprocess.CalledProcessError as e:  # pragma: no cover
         raise CryptException('Decryption failed') from e
@@ -513,7 +505,7 @@ def sign(path, identity, outpath=None):
     os.close(fd)
     try:
         cmd = ['minisign', '-S', '-x', outpath, '-s', fn, '-m', path]
-        _run_command(cmd, os.getcwd(), ident._read_minisign_sign_err)
+        _run_command(cmd, Path.cwd(), ident._read_minisign_sign_err)
     except subprocess.CalledProcessError as e:  # pragma: no cover
         raise CryptException('Signing failed') from e
     finally:
@@ -539,10 +531,12 @@ def verify(path, identity, sigpath=None):
         sigpath = '%s.sig' % path
     if not os.path.isfile(sigpath):  # pragma: no cover
         raise ValueError('No such file: %s' % sigpath)
-    cmd = ['minisign', '-V', '-x', sigpath, '-P', ident.sign_public, '-m', path]
+    cmd = [
+        'minisign', '-V', '-x', sigpath, '-P', ident.sign_public, '-m', path
+    ]
     # import pdb; pdb.set_trace()
     try:
-        _run_command(cmd, os.getcwd())
+        _run_command(cmd, Path.cwd())
     except subprocess.CalledProcessError as e:  # pragma: no cover
         raise CryptException('Verification failed') from e
 
@@ -552,7 +546,12 @@ def _get_b64(path):
         return base64.b64encode(f.read()).decode('ascii')
 
 
-def encrypt_and_sign(path, recipients, signer, armor=False, outpath=None, sigpath=None):
+def encrypt_and_sign(path,
+                     recipients,
+                     signer,
+                     armor=False,
+                     outpath=None,
+                     sigpath=None):
     """
     Encrypt the data at *path* for identities named in *recipients* and sign it with
     the identity named by *signer*. If *armor* is true, use ASCII armor for the
@@ -566,7 +565,8 @@ def encrypt_and_sign(path, recipients, signer, armor=False, outpath=None, sigpat
     Note that you'll need to call :func:`verify_and_decrypt` to reverse this process.
     """
     if not recipients or not signer:  # pragma: no cover
-        raise ValueError('At least one recipient (and one signer) needs to be specified.')
+        raise ValueError(
+            'At least one recipient (and one signer) needs to be specified.')
     if not os.path.isfile(path):  # pragma: no cover
         raise ValueError('No such file: %s' % path)
     naive = False
@@ -584,10 +584,7 @@ def encrypt_and_sign(path, recipients, signer, armor=False, outpath=None, sigpat
         # 6. Sign that.
         fn = _get_work_file(dir=PAGESIGN_DIR, prefix='sig-')
         sigpath = sign(path, signer, fn)
-        inner = {
-            'plaintext': _get_b64(path),
-            'signature': _get_b64(sigpath)
-        }
+        inner = {'plaintext': _get_b64(path), 'signature': _get_b64(sigpath)}
         os.remove(sigpath)
         data = json.dumps(inner).encode('ascii')
         encrypted = encrypt_mem(data, recipients, armor)
@@ -608,8 +605,7 @@ def encrypt_and_sign(path, recipients, signer, armor=False, outpath=None, sigpat
         }
         data = json.dumps(outer).encode('ascii')
         outpath = _get_work_file(dir=PAGESIGN_DIR, prefix='message-')
-        with open(outpath, 'wb') as f:
-            f.write(data)
+        Path(outpath).write_bytes(data)
         sigpath = sign(outpath, signer)
         return outpath, sigpath
 
@@ -630,7 +626,8 @@ def verify_and_decrypt(path, recipients, signer, outpath=None, sigpath=None):
     :func:`encrypt_and_sign`.
     """
     if not signer or not recipients:  # pragma: no cover
-        raise ValueError('At least one recipient (and one signer) needs to be specified.')
+        raise ValueError(
+            'At least one recipient (and one signer) needs to be specified.')
     if not os.path.isfile(path):  # pragma: no cover
         raise ValueError('No such file: %s' % path)
     if sigpath is None:  # pragma: no cover
@@ -664,8 +661,8 @@ def verify_and_decrypt(path, recipients, signer, outpath=None, sigpath=None):
         os.write(fd, base64.b64decode(inner['plaintext'].encode('ascii')))
         os.close(fd)
         sigpath = outpath + '.sig'
-        with open(sigpath, 'wb') as f:
-            f.write(base64.b64decode(inner['signature'].encode('ascii')))
+        Path(sigpath).write_bytes(
+            base64.b64decode(inner['signature'].encode('ascii')))
         verify(outpath, signer, sigpath)
         os.remove(sigpath)
         return outpath

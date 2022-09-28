@@ -6,15 +6,16 @@
 import json
 import logging
 import os
+from pathlib import Path
 import shutil
 import sys
 import tempfile
 import unittest
 
 from pagesign import (Identity, CryptException, encrypt, encrypt_mem, decrypt,
-                      decrypt_mem, sign, verify, encrypt_and_sign, verify_and_decrypt,
-                      remove_identities, clear_identities, list_identities,
-                      _get_work_file)
+                      decrypt_mem, sign, verify, encrypt_and_sign,
+                      verify_and_decrypt, remove_identities, clear_identities,
+                      list_identities, _get_work_file)
 
 DEBUGGING = 'PY_DEBUG' in os.environ
 
@@ -38,6 +39,7 @@ class BaseTest(unittest.TestCase):
 
 
 class BasicTest(BaseTest):
+
     def test_clearing_creating_listing_and_removal(self):
         clear_identities()
         d = dict(list_identities())
@@ -95,8 +97,7 @@ class BasicTest(BaseTest):
             fn = _get_work_file(prefix='test-pagesign-')
             self.addCleanup(os.remove, fn)
             decrypted = decrypt(encrypted, 'bob', fn)
-            with open(decrypted, 'rb') as f:
-                ddata = f.read()
+            ddata = Path(decrypted).read_bytes()
             self.assertEqual(data, ddata)
             with self.assertRaises(CryptException) as ec:
                 verify(encrypted, 'bob', signed)
@@ -113,14 +114,19 @@ class BasicTest(BaseTest):
             data = b'Hello, world!'
             os.write(fd, data)
             os.close(fd)
-            outpath, sigpath = encrypt_and_sign(fn, 'bob', 'alice', armor=armor)
+            outpath, sigpath = encrypt_and_sign(fn,
+                                                'bob',
+                                                'alice',
+                                                armor=armor)
             # self.assertEqual(outpath, fn + '.age')
             self.assertEqual(sigpath, outpath + '.sig')
             self.addCleanup(os.remove, outpath)
             self.addCleanup(os.remove, sigpath)
             verify(outpath, 'alice', sigpath)
             # Repeat call using recipient as list
-            outpath, sigpath = encrypt_and_sign(fn, ['bob'], 'alice', armor=armor)
+            outpath, sigpath = encrypt_and_sign(fn, ['bob'],
+                                                'alice',
+                                                armor=armor)
             # self.assertEqual(outpath, fn + '.age')
             self.assertEqual(sigpath, outpath + '.sig')
             self.addCleanup(os.remove, outpath)
@@ -138,19 +144,22 @@ class BasicTest(BaseTest):
             data = b'Hello, world!'
             os.write(fd, data)
             os.close(fd)
-            outpath, sigpath = encrypt_and_sign(fn, 'bob', 'alice', armor=armor)
+            outpath, sigpath = encrypt_and_sign(fn,
+                                                'bob',
+                                                'alice',
+                                                armor=armor)
             self.addCleanup(os.remove, outpath)
             self.addCleanup(os.remove, sigpath)
             fn = _get_work_file(prefix='test-pagesign-')
             self.addCleanup(os.remove, fn)
-            decrypted = verify_and_decrypt(outpath, 'bob', 'alice', fn, sigpath)
-            with open(decrypted, 'rb') as f:
-                ddata = f.read()
+            decrypted = verify_and_decrypt(outpath, 'bob', 'alice', fn,
+                                           sigpath)
+            ddata = Path(decrypted).read_bytes()
             self.assertEqual(data, ddata)
             # Repeat call with recipient as list
-            decrypted = verify_and_decrypt(outpath, ['bob'], 'alice', fn, sigpath)
-            with open(decrypted, 'rb') as f:
-                ddata = f.read()
+            decrypted = verify_and_decrypt(outpath, ['bob'], 'alice', fn,
+                                           sigpath)
+            ddata = Path(decrypted).read_bytes()
             self.assertEqual(data, ddata)
             os.remove(decrypted)
 
@@ -227,8 +236,7 @@ class BasicTest(BaseTest):
         dfn = _get_work_file(prefix='test-pagesign-')
         self.addCleanup(os.remove, dfn)
         decrypted = verify_and_decrypt(outpath, 'bob', 'alice', dfn, sigpath)
-        with open(decrypted, 'rb') as f:
-            ddata = f.read()
+        ddata = Path(decrypted).read_bytes()
         self.assertEqual(data, ddata)
         os.remove(decrypted)
 
@@ -241,8 +249,10 @@ def main():
     if not os.path.exists(d):  # pragma: no cover
         os.makedirs(d)
     if os.path.isdir(os.path.dirname(lfn)):  # pragma: no branch
-        logging.basicConfig(level=logging.DEBUG, filename=lfn,
-                            filemode='w', format='%(message)s')
+        logging.basicConfig(level=logging.DEBUG,
+                            filename=lfn,
+                            filemode='w',
+                            format='%(message)s')
     # Is there an existing store?
     from pagesign import PAGESIGN_DIR
     existing = os.path.join(PAGESIGN_DIR, 'keys')
