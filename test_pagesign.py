@@ -188,6 +188,26 @@ class BasicTest(BaseTest):
             ddata = decrypt_mem(encrypted, 'bob')
         self.assertEqual(str(ec.exception), 'Decryption failed')
 
+    def test_identity_failures(self):
+
+        class Dummy1(Identity):
+
+            def _parse_age_file(self, fn):
+                pass
+
+        class Dummy2(Identity):
+
+            def _parse_minisign_file(self, fn):
+                pass
+
+        with self.assertRaises(CryptException) as ec:
+            Dummy1()
+        self.assertEqual(str(ec.exception), 'Identity creation failed (crypt)')
+
+        with self.assertRaises(CryptException) as ec:
+            Dummy2()
+        self.assertEqual(str(ec.exception), 'Identity creation failed (sign)')
+
     def test_default_paths(self):
         for name in ('alice', 'bob'):
             identity = Identity()

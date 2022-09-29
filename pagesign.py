@@ -15,7 +15,6 @@ import os
 from pathlib import Path
 import re
 import shutil
-# import stat
 import subprocess
 import sys
 import tempfile
@@ -219,7 +218,9 @@ class Identity:
                 try:
                     _run_command(cmd, wd)
                     self._parse_age_file(p)
-                except subprocess.CalledProcessError as e:  # pragma: no cover
+                    for name in ('created', 'crypt_public', 'crypt_secret'):
+                        getattr(self, name)  # ensure the attribute is there
+                except Exception as e:  # pragma: no cover
                     raise CryptException(
                         'Identity creation failed (crypt)') from e
                 finally:
@@ -234,8 +235,10 @@ class Identity:
                 try:
                     _run_command(cmd, wd, self._read_minisign_gen_err)
                     self._parse_minisign_file(pfn)
+                    for name in ('sign_id', 'sign_public'):
+                        getattr(self, name)  # ensure the attribute is there
                     self.sign_secret = Path(sfn).read_text(self.encoding)
-                except subprocess.CalledProcessError as e:  # pragma: no cover
+                except Exception as e:  # pragma: no cover
                     raise CryptException(
                         'Identity creation failed (sign)') from e
                 finally:
