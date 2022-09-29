@@ -11,6 +11,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from pagesign import (Identity, CryptException, encrypt, encrypt_mem, decrypt,
                       decrypt_mem, sign, verify, encrypt_and_sign,
@@ -207,6 +208,24 @@ class BasicTest(BaseTest):
         with self.assertRaises(CryptException) as ec:
             Dummy2()
         self.assertEqual(str(ec.exception), 'Identity creation failed (sign)')
+
+    def test_signing_failure(self):
+
+        def dummy(*args, **kwargs):
+            raise ValueError()
+
+        identity = Identity()
+        identity.save('alice')
+
+        fn = _get_work_file(prefix='test-pagesign-')
+        sfn = _get_work_file(prefix='test-pagesign-sig-')
+        self.addCleanup(os.remove, fn)
+        self.addCleanup(os.remove, sfn)
+
+        with self.assertRaises(CryptException) as ec:
+            with patch('pagesign._run_command', dummy):
+                sign(fn, 'alice', sfn)
+        self.assertEqual(str(ec.exception), 'Signing failed')
 
     def test_default_paths(self):
         for name in ('alice', 'bob'):

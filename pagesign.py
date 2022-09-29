@@ -527,7 +527,7 @@ def sign(path, identity, outpath=None):
     try:
         cmd = ['minisign', '-S', '-x', outpath, '-s', fn, '-m', path]
         _run_command(cmd, os.getcwd(), ident._read_minisign_sign_err)
-    except subprocess.CalledProcessError as e:  # pragma: no cover
+    except Exception as e:  # pragma: no cover
         raise CryptException('Signing failed') from e
     finally:
         _shred(fn)
