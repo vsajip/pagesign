@@ -157,6 +157,7 @@ class BasicTest(BaseTest):
                                            sigpath)
             ddata = Path(decrypted).read_bytes()
             self.assertEqual(data, ddata)
+            os.remove(decrypted)
             # Repeat call with recipient as list
             decrypted = verify_and_decrypt(outpath, ['bob'], 'alice', fn,
                                            sigpath)
