@@ -243,21 +243,25 @@ class BasicTest(BaseTest):
 
         # Test with no encrypted outpath
         encrypted = encrypt(fn, 'alice')
+        self.addCleanup(os.remove, encrypted)
         self.assertEqual(encrypted, fn + '.age')
         decrypted = decrypt(encrypted, 'alice')
         self.assertEqual(decrypted, fn)
         # Test with specified encrypted outpath
         fd, ofn = tempfile.mkstemp(prefix='test-pagesign-')
+        self.addCleanup(os.remove, ofn)
         os.close(fd)
         encrypted = encrypt(fn, 'alice', outpath=ofn)
         self.assertEqual(encrypted, ofn)
         decrypted = decrypt(ofn, 'alice')
+        self.addCleanup(os.remove, decrypted)
         self.assertEqual(decrypted, ofn + '.dec')
 
         # Signing / verification
 
         # Test with no signed outpath
         signed = sign(fn, 'alice')
+        self.addCleanup(os.remove, signed)
         self.assertEqual(signed, fn + '.sig')
         verify(fn, 'alice')
         # Test with specified signed outpath
