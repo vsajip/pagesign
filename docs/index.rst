@@ -67,7 +67,7 @@ Installation
 Installing from PyPI
 --------------------
 
-You can install this package from the Python Package Index (pyPI) by running::
+You can install this package from the Python Package Index (PyPI) by running::
 
     pip install pagesign
 
@@ -264,7 +264,7 @@ keys are the attribute names mentioned earlier.
 Importing identities
 --------------------
 
-If you receive a dictonary representing an exported identity from someone, you can
+If you receive a dictionary representing an exported identity from someone, you can
 import it into your local keystore by calling the class method `Identity.imported()`:
 
 .. code-block:: python
@@ -366,7 +366,7 @@ The `Identity` class API is here:
 
    .. method:: Identity.export() -> dict[str, str]
 
-      Rrturn the public elements of this instance as a dictionary. The dictionary keys
+      Return the public elements of this instance as a dictionary. The dictionary keys
       match the attribute names listed earlier.
 
    .. method:: Identity.save(name : str) -> None
@@ -469,7 +469,7 @@ Signatures are always stored 'detached', i.e. in separate files from what they a
 signing.
 
 .. note:: Although encryption and decryption can be performed in memory, there is no
-   analoguous in-memory API for signing and verification, because `minisign` only signs
+   analogous in-memory API for signing and verification, because `minisign` only signs
    and verifies signature files against source files and identities.
 
 .. index:: Signing
@@ -562,7 +562,7 @@ As a counterpart to `encrypt_and_sign()`, there's also `verify_and_decrypt()`:
    .. versionchanged:: 0.1.1
 
    The files passed to this function must have been produced by
-   :func:`encrypt_and_sign`, as we need to reverse the algoritm which is applied there.
+   :func:`encrypt_and_sign`, as we need to reverse the algorithm which is applied there.
 
 .. index::
     single: Caveats; combining encryption and signing
