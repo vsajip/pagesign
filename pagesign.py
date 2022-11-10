@@ -344,7 +344,7 @@ class Identity:
     def imported(cls, d, name):
         """
         Return a remote identity instance created from *d* and with local name *name*.
-        The dictionary must contain the public attributes *created', *crypt_public*,
+        The dictionary must contain the public attributes *created*, *crypt_public*,
         *sign_public* and *sign_id* (which will be present in dictionaries created
         using the :meth:`export` method). Names are case-sensitive.
         """
@@ -382,6 +382,18 @@ def encrypt(path, recipients, outpath=None, armor=False):
     save the encrypted data in *outpath*. The output data is ASCII-armored if *armor*
     is true, else it is binary. If *outpath* isn't specified, it will be set to *path*
     with ``'.age'`` appended.
+
+    Args:
+        path (str): The path to the data to be encrypted.
+
+        recipients (str|list[str]): The name(s) of the recipient(s) of the data.
+
+        outpath (str): The path to which the encrypted data should be written.
+
+        armor (bool): Whether the output is to be ASCII-armored.
+
+    Returns:
+        str: The value of *outpath* is returned.
     """
     if not os.path.isfile(path):  # pragma: no cover
         raise ValueError('No such file: %s' % path)
@@ -416,6 +428,16 @@ def encrypt_mem(data, recipients, armor=False):
     Encrypt the in-memory *data* for identities whose names are in *recipients*. The
     output data is ASCII-armored if *armor* is true, else it is binary. The encrypted
     data is returned as bytes.
+
+    Args:
+        data (str|bytes): The data to be encrypted.
+
+        recipients (str|list[str]): The name(s) of the recipient(s) of the data.
+
+        armor (bool): Whether the output is to be ASCII-armored.
+
+    Returns:
+        bytes: The encrypted data.
     """
     cmd = _get_encryption_command(recipients, armor)
     if isinstance(data, str):
@@ -456,6 +478,16 @@ def decrypt(path, identities, outpath=None):
     and save the decrypted data at *outpath*. If *outpath* is not specified and *path*
     ends with ``'.age'``, then *outpath* will be set to path* with that suffix
     stripped. Otherwise, it will be set to *path* with ``'.dec'`` appended.
+
+    Args:
+        path (str): The path to the data to be decrypted.
+
+        identities (str|list[str]): The name(s) of the recipient(s) of the data.
+
+        outpath (str): The path to which the decrypted data should be written.
+
+    Returns:
+        str: The value of *outpath* is returned.
     """
     if not os.path.isfile(path):  # pragma: no cover
         raise ValueError('No such file: %s' % path)
@@ -489,6 +521,14 @@ def decrypt_mem(data, identities):
     """
     Decrypt the in-memory *data* for recipients whose names are in *identities*. The
     decrypted data is returned as bytes.
+
+    Args:
+        data (str|bytes): The data to decrypt.
+
+        identities (str|list[str]): The name(s) of the recipient(s) of the data.
+
+    Returns:
+        bytes: The decrypted data.
     """
     cmd, fn = _get_decryption_command(identities)
     if isinstance(data, str):  # pragma: no cover
@@ -509,6 +549,16 @@ def sign(path, identity, outpath=None):
     """
     Sign the data at *path* with the named *identity* and save the signature in
     *outpath*. If not specified, *outpath* is set to *path* with ``'.sig'`` appended.
+
+    Args:
+        path (str): The path to the data to be signed.
+
+        identity (str): The name of the signer's identity.
+
+        outpath (str): The path to which the signature is to be written.
+
+    Returns:
+        str: The value of *outpath is returned.
     """
     if not identity:  # pragma: no cover
         raise ValueError('An identity needs to be specified.')
@@ -546,6 +596,13 @@ def verify(path, identity, sigpath=None):
     the signature is at *sigpath*. If not specified, *sigpath* is set to *path* with
     ``'.sig'`` appended. If verification fails, an exception is raised, otherwise this
     function returns ``None``.
+
+    Args:
+        path (str): The path to the data to be verified.
+
+        identity (str): The name of the signer's identity.
+
+        sigpath (str): The path where the signature is stored.
     """
     if not identity:  # pragma: no cover
         raise ValueError('An identity needs to be specified.')
@@ -587,9 +644,21 @@ def encrypt_and_sign(path,
     with ``'.age'`` appended. If not specified, *sigpath* is set to *outpath* with
     ``'.sig'`` appended.
 
-    A tuple of *outpath* and *sigpath* is returned.
-
     Note that you'll need to call :func:`verify_and_decrypt` to reverse this process.
+
+    Args:
+        recipients (str|list[str]): The name(s) of the recipient(s) of the encrypted data.
+
+        signer (str): The name of the signer identity.
+
+        armor (bool): Whether the result is ASCII-armored.
+
+        outpath (str): The output path to which the encrypted data should be written,
+
+        sigpath (str): The path to which the signature should be written.
+
+    Returns:
+        tuple(str, str): A tuple of *outpath* and *sigpath* is returned.
     """
     if not recipients or not signer:  # pragma: no cover
         raise ValueError(
@@ -642,7 +711,7 @@ def verify_and_decrypt(path, recipients, signer, outpath=None, sigpath=None):
     Verify the encrypted and signed data at *path* as having been signed by the
     identity named by *signer* and intended for identities named in *recipients*.
     The signature for *path* is in *sigpath*. If not specified, it will be set to
-    *path* with ``'.sig'`` appended. If verification or decryption fails, an exceptio
+    *path* with ``'.sig'`` appended. If verification or decryption fails, an exception
     will be raised. Otherwise, the decrypted data will be stored at *outpath*. If
     not specified, it will be set to *path* with the suffix stripped (if it ends in
     ``'.age'``) or with ``'.dec'`` appended.
@@ -651,6 +720,20 @@ def verify_and_decrypt(path, recipients, signer, outpath=None, sigpath=None):
 
     Note that the file inputs to this function should have been created using
     :func:`encrypt_and_sign`.
+
+    Args:
+        path (str): The path to the encrypted and signed data.
+
+        recipients (str|list[str]): The name(s) of the recipient(s) of the encrypted data.
+
+        signer (str): The name of the signer identity.
+
+        outpath (str): The output path to which the decrypted data should be written,
+
+        sigpath (str): The path in which the signature is to be found.
+
+    Returns:
+        str: The value of outpath is returned.
     """
     if not signer or not recipients:  # pragma: no cover
         raise ValueError(
