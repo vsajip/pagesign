@@ -134,8 +134,10 @@ You interface to the `age` and `minisign` functionality through the following it
 the `pagesign` module:
 
 * The :class:`~pagesign.Identity` class.
-* The `encrypt`, `decrypt`, `sign` and `verify` functions. (There are other functions
-  you can use, but those are the main ones.)
+
+* The :func:`~pagesign.encrypt`, :func:`~pagesign.decrypt`, :func:`~pagesign.sign` and
+  :func:`~pagesign.verify` functions. (There are other functions you can use,
+  but those are the main ones.)
 
 Identity Management
 ===================
