@@ -37,6 +37,9 @@ __all__ = [
 
 
 class CryptException(Exception):
+    """
+    Base class of all exceptions defined in this module.
+    """
     pass
 
 
@@ -95,6 +98,9 @@ def remove_identities(*args):
     """
     Remove the identities stored locally whose names are in *args*. Names are
     case-sensitive.
+
+    Args:
+        args (list[str]): The list of identities to remove.
     """
     changed = False
     for name in args:

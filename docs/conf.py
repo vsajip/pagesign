@@ -105,10 +105,17 @@ HTML_THEME_OPTIONS = {
 # a list of builtin themes.
 html_theme = os.environ.get('DOCS_THEME', 'default')
 
+if html_theme == 'sizzle' and os.path.isfile('hover.json'):
+    import json
+
+    with open('hover.json', encoding='utf-8') as f:
+        HTML_THEME_OPTIONS['sizzle']['custom_data'] = {'hovers': json.load(f) }
+
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {'collapsiblesidebar': True}
+if html_theme in HTML_THEME_OPTIONS:
+    html_theme_options = HTML_THEME_OPTIONS[html_theme]
 
 # Add any paths that contain custom themes here, relative to this directory.
 html_theme_path = ['themes']
