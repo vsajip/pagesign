@@ -558,7 +558,7 @@ def sign(path, identity, outpath=None):
         outpath (str): The path to which the signature is to be written.
 
     Returns:
-        str: The value of *outpath is returned.
+        str: The value of *outpath* is returned.
     """
     if not identity:  # pragma: no cover
         raise ValueError('An identity needs to be specified.')
