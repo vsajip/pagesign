@@ -476,7 +476,7 @@ def decrypt(path, identities, outpath=None):
     """
     Decrypt the data at *path* which is intended for recipients named in *identities*
     and save the decrypted data at *outpath*. If *outpath* is not specified and *path*
-    ends with ``'.age'``, then *outpath* will be set to path* with that suffix
+    ends with ``'.age'``, then *outpath* will be set to *path* with that suffix
     stripped. Otherwise, it will be set to *path* with ``'.dec'`` appended.
 
     Args:
@@ -592,10 +592,10 @@ def sign(path, identity, outpath=None):
 
 def verify(path, identity, sigpath=None):
     """
-    Verify that the data at *path* was signed with the identity named *identity", where
+    Verify that the data at *path* was signed with the identity named *identity*, where
     the signature is at *sigpath*. If not specified, *sigpath* is set to *path* with
-    ``'.sig'`` appended. If verification fails, an exception is raised, otherwise this
-    function returns ``None``.
+    `'.sig'` appended. If verification fails, an exception is raised, otherwise this
+    function returns `None`.
 
     Args:
         path (str): The path to the data to be verified.
