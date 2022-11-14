@@ -545,13 +545,15 @@ If you want to use signing and encryption together, use `encrypt_and_sign()`:
    #. Construct a JSON object of the encrypted data and hashes.
    #. Sign that and save it and its signature.
 
+   To reverse the process, you need to use :func:`~pagesign.verify_and_decrypt`.
+
    This corresponds to `Section 5.2 of the Davis paper
    <https://archive.ph/VFWcb#SES>`_.
 
 Using verification and decryption together
 ------------------------------------------
 
-As a counterpart to `encrypt_and_sign()`, there's also `verify_and_decrypt()`:
+As a counterpart to :func:`~pagesign.encrypt_and_sign`, there's also `verify_and_decrypt()`:
 
 .. function:: verify_and_decrypt(path: str, recipients: Union[str, list[str]], signer: str, outpath: Optional[str] = None, sigpath: Optional[str] = None) -> str
 

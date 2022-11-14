@@ -331,8 +331,11 @@ class Identity:
 
     def export(self):
         """
-        Export this instance. Only public attributes are preserved in the export - it
-        is meant for sending to someone securely.
+        Export this instance. Only public attributes are preserved in the export
+        --- it is meant for sending to someone securely.
+
+        Returns:
+            dict: A dictionary containing the exportable items of the instance.
         """
         d = dict(self.__dict__)
         for k in self.__dict__:
@@ -344,9 +347,18 @@ class Identity:
     def imported(cls, d, name):
         """
         Return a remote identity instance created from *d* and with local name *name*.
-        The dictionary must contain the public attributes *created*, *crypt_public*,
-        *sign_public* and *sign_id* (which will be present in dictionaries created
-        using the :meth:`export` method). Names are case-sensitive.
+
+        Args:
+            d (dict): A dictionary from some external source. It must contain the public
+                      attributes *created*, *crypt_public*, *sign_public* and
+                      *sign_id* (which will be present in dictionaries created
+                      using the :meth:`export` method)
+
+            name (str): A name against which to save the imported information.
+                        Note that names are case-sensitive.
+
+        Returns:
+            Identity: The saved identity constructed from *d*.
         """
         result = object.__new__(cls)
         for k in PUBLIC_ATTRS:
@@ -380,15 +392,17 @@ def encrypt(path, recipients, outpath=None, armor=False):
     """
     Encrypt the file at *path* for identities whose names are in *recipients* and
     save the encrypted data in *outpath*. The output data is ASCII-armored if *armor*
-    is true, else it is binary. If *outpath* isn't specified, it will be set to *path*
-    with ``'.age'`` appended.
+    is true, else it is binary.
 
     Args:
         path (str): The path to the data to be encrypted.
 
-        recipients (str|list[str]): The name(s) of the recipient(s) of the data.
+        recipients (str|list[str]): The name(s) of the identities of the recipient(s)
+                                    of the data.
 
         outpath (str): The path to which the encrypted data should be written.
+                       If not specified, it will be set to *path* with
+                       ``'.age'`` appended.
 
         armor (bool): Whether the output is to be ASCII-armored.
 
@@ -432,7 +446,8 @@ def encrypt_mem(data, recipients, armor=False):
     Args:
         data (str|bytes): The data to be encrypted.
 
-        recipients (str|list[str]): The name(s) of the recipient(s) of the data.
+        recipients (str|list[str]): The name(s) of the identities of the
+                                    recipient(s) of the data.
 
         armor (bool): Whether the output is to be ASCII-armored.
 
@@ -475,9 +490,7 @@ def _get_decryption_command(identities):
 def decrypt(path, identities, outpath=None):
     """
     Decrypt the data at *path* which is intended for recipients named in *identities*
-    and save the decrypted data at *outpath*. If *outpath* is not specified and *path*
-    ends with ``'.age'``, then *outpath* will be set to *path* with that suffix
-    stripped. Otherwise, it will be set to *path* with ``'.dec'`` appended.
+    and save the decrypted data at *outpath*.
 
     Args:
         path (str): The path to the data to be decrypted.
@@ -485,6 +498,10 @@ def decrypt(path, identities, outpath=None):
         identities (str|list[str]): The name(s) of the recipient(s) of the data.
 
         outpath (str): The path to which the decrypted data should be written.
+                       If not specified and *path* ends with ``'.age'``, then
+                       *outpath* will be set to *path* with that suffix
+                       stripped. Otherwise, it will be set to *path* with
+                       ``'.dec'`` appended.
 
     Returns:
         str: The value of *outpath* is returned.
@@ -519,13 +536,13 @@ def decrypt(path, identities, outpath=None):
 
 def decrypt_mem(data, identities):
     """
-    Decrypt the in-memory *data* for recipients whose names are in *identities*. The
-    decrypted data is returned as bytes.
+    Decrypt the in-memory *data* for recipients whose names are in *identities*.
 
     Args:
         data (str|bytes): The data to decrypt.
 
-        identities (str|list[str]): The name(s) of the recipient(s) of the data.
+        identities (str|list[str]): The name(s) of the identities of the
+                                    recipient(s) of the data.
 
     Returns:
         bytes: The decrypted data.
@@ -548,14 +565,16 @@ def decrypt_mem(data, identities):
 def sign(path, identity, outpath=None):
     """
     Sign the data at *path* with the named *identity* and save the signature in
-    *outpath*. If not specified, *outpath* is set to *path* with ``'.sig'`` appended.
+    *outpath*.
 
     Args:
         path (str): The path to the data to be signed.
 
         identity (str): The name of the signer's identity.
 
-        outpath (str): The path to which the signature is to be written.
+        outpath (str): The path to which the signature is to be written. If not
+                       specified, *outpath* is set to *path* with ``'.sig'``
+                       appended.
 
     Returns:
         str: The value of *outpath* is returned.
@@ -592,17 +611,17 @@ def sign(path, identity, outpath=None):
 
 def verify(path, identity, sigpath=None):
     """
-    Verify that the data at *path* was signed with the identity named *identity*, where
-    the signature is at *sigpath*. If not specified, *sigpath* is set to *path* with
-    `'.sig'` appended. If verification fails, an exception is raised, otherwise this
-    function returns `None`.
+    Verify that the data at *path* was signed with the identity named *identity*,
+    where the signature is at *sigpath*. If verification fails, an exception is
+    raised, otherwise this function returns `None`.
 
     Args:
         path (str): The path to the data to be verified.
 
         identity (str): The name of the signer's identity.
 
-        sigpath (str): The path where the signature is stored.
+        sigpath (str): The path where the signature is stored. If not specified,
+                       *sigpath* is set to *path* with `'.sig'` appended.
     """
     if not identity:  # pragma: no cover
         raise ValueError('An identity needs to be specified.')
@@ -638,24 +657,29 @@ def encrypt_and_sign(path,
                      sigpath=None):
     """
     Encrypt the data at *path* for identities named in *recipients* and sign it with
-    the identity named by *signer*. If *armor* is true, use ASCII armor for the
-    encrypted data, else save it as binary. Write the encrypted data to *outpath* and
-    the signature to *sigpath*. If *outpath* isn't specified, it will be set to *path*
-    with ``'.age'`` appended. If not specified, *sigpath* is set to *outpath* with
-    ``'.sig'`` appended.
+    the identity named by *signer*. Write the encrypted data to *outpath* and
+    the signature to *sigpath*.
 
     Note that you'll need to call :func:`verify_and_decrypt` to reverse this process.
 
     Args:
-        recipients (str|list[str]): The name(s) of the recipient(s) of the encrypted data.
+        path (str): The path to the data to be decrypted.
+
+        recipients (str|list[str]): The name(s) of the identities of the
+                                    recipient(s) of the encrypted data.
 
         signer (str): The name of the signer identity.
 
-        armor (bool): Whether the result is ASCII-armored.
+        armor (bool):  If `True`, use ASCII armor for the encrypted data, else
+                       save it as binary.
 
-        outpath (str): The output path to which the encrypted data should be written,
+        outpath (str): The output path to which the encrypted data should be
+                       written, If not specified, it will be set to *path*
+                       with ``'.age'`` appended.
 
-        sigpath (str): The path to which the signature should be written.
+        sigpath (str): The path to which the signature should be written. If not
+                       specified, *sigpath* is set to *outpath* with ``'.sig'``
+                       appended.
 
     Returns:
         tuple(str, str): A tuple of *outpath* and *sigpath* is returned.
