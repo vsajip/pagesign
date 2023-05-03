@@ -21,7 +21,7 @@ on:
       - '.hgignore'
       - '.gitignore'
 
-  workflow_dispatch
+  workflow_dispatch:
 
 jobs:
   build:
