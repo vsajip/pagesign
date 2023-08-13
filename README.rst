@@ -7,7 +7,7 @@
    :target: https://app.codecov.io/gh/vsajip/pagesign
    :alt: GitHub coverage status
 
-.. |badge3| image:: hhttps://img.shields.io/pypi/v/pagesign
+.. |badge3| image:: https://img.shields.io/pypi/v/pagesign
    :target: https://pypi.org/project/pagesign/
    :alt: PyPI package
 
