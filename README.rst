@@ -1,11 +1,15 @@
-|badge1| |badge2|
+|badge1| |badge2| |badge3|
 
-.. |badge1| image:: https://img.shields.io/github/workflow/status/vsajip/pagesign/Tests
+.. |badge1| image:: https://img.shields.io/github/actions/workflow/status/vsajip/pagesign/tests.yml
    :alt: GitHub test status
 
 .. |badge2| image:: https://img.shields.io/codecov/c/github/vsajip/pagesign
    :target: https://app.codecov.io/gh/vsajip/pagesign
    :alt: GitHub coverage status
+
+.. |badge3| image:: hhttps://img.shields.io/pypi/v/pagesign
+   :target: https://pypi.org/project/pagesign/
+   :alt: PyPI package
 
 
 What is it?

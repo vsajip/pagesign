@@ -43,9 +43,10 @@ Deployment Requirements
 =======================
 
 Apart from a recent-enough version of Python, in order to use this module you need to
-have access to a compatible versions of `age-keygen`, `age` and `minisign`
-executables. The system has been tested with `age` v1.0.0 and `minisign` v0.8 on
-Windows, macOS and Ubuntu.
+have access to a compatible versions of `age-keygen`, `age` and `minisign` executables.
+The system has been tested with `age` later than v1.0.0 and `minisign` later than v0.8 on
+Windows, macOS and Ubuntu. You can see test runs (which show the versions of `age` and
+`minisign` used) `here <https://github.com/vsajip/pagesign/actions>`__.
 
 .. index:: Acknowledgements
 
