@@ -21,6 +21,9 @@ on:
       - '.hgignore'
       - '.gitignore'
 
+  schedule:  # at 03:06 on day-of-month 6
+    - cron: '6 3 6 * *'
+
   workflow_dispatch:
 
 jobs:
