@@ -74,3 +74,4 @@ jobs:
         flags: unittests
         files: coverage.xml
         fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
